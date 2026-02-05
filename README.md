@@ -4,19 +4,19 @@ A modern task management application with a **natural language chat interface**.
 
 ![Task Manager](https://img.shields.io/badge/React-19.2-blue) ![Node](https://img.shields.io/badge/Node-20-green) ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue) ![Prisma](https://img.shields.io/badge/Prisma-6.19-purple)
 
-## ✨ Features
+## Features
 
-- 💬 **Natural Language Processing** - Create, edit, and delete tasks using conversational commands
-- 📅 **Smart Date Parsing** - Understands "tomorrow", "next friday", "in 3 days", etc.
-- 🎯 **Priority Levels** - Set high, medium, or low priority for tasks
-- 🔄 **Recurring Tasks** - Support for daily, weekly, monthly recurrence
-- 📝 **Task Descriptions** - Add detailed descriptions to your tasks
-- 📆 **Calendar View** - Visual calendar showing tasks by due date
-- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
-- 💾 **Chat Persistence** - Your conversation history is saved locally
-- ↩️ **Undo Support** - Made a mistake? Just type "undo"
+- **Natural Language Processing** - Create, edit, and delete tasks using conversational commands
+- **Smart Date Parsing** - Understands "tomorrow", "next friday", "in 3 days", etc.
+- **Priority Levels** - Set high, medium, or low priority for tasks
+- **Recurring Tasks** - Support for daily, weekly, monthly recurrence
+- **Task Descriptions** - Add detailed descriptions to your tasks
+- **Calendar View** - Visual calendar showing tasks by due date
+- **Responsive Design** - Works on desktop, tablet, and mobile
+- **Chat Persistence** - Your conversation history is saved locally
+- **Undo Support** - Made a mistake? Just type "undo"
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -25,7 +25,7 @@ A modern task management application with a **natural language chat interface**.
 | NLP Engine | Custom `command-task-core` module |
 | Database | MySQL 8.0 (Docker) |
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -84,7 +84,7 @@ DATABASE_URL="mysql://root:root@localhost:3306/taskmanager"
 PORT=3000
 ```
 
-## 💬 How to Use
+## How to Use
 
 Just type naturally in the chat! Here are some examples:
 
@@ -146,7 +146,7 @@ flip a coin             # Random decisions
 roll a dice             # Random number
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 projeto-task-manager/
@@ -173,7 +173,7 @@ projeto-task-manager/
 └── docker-compose.yml  # Full stack Docker setup
 ```
 
-## 🔧 Available Scripts
+## Available Scripts
 
 | Command | Description |
 |---------|-------------|
@@ -185,13 +185,13 @@ projeto-task-manager/
 | `npm run docker:logs` | View container logs |
 | `npm run docker:restart` | Rebuild and restart everything |
 
-## 📱 Responsive Layout
+## Responsive Layout
 
 - **Desktop** (1280px+): Three-column layout with chat, calendar, and task details
 - **Tablet** (1024px+): Two-column with slide-over panel for task details
 - **Mobile** (<1024px): Single column with bottom sheet overlays
 
-## 🧠 NLP Engine
+## NLP Engine
 
 The `command-task-core` module processes natural language through a pipeline:
 
@@ -205,10 +205,10 @@ Supported date formats:
 - Absolute: "January 15", "01/15/2026", "15th of March"
 - Day names: "monday", "next friday", "this saturday"
 
-## 📄 License
+## License
 
 MIT License - feel free to use this project for learning or building your own task manager!
 
 ---
 
-Made with ❤️ by [Telmo](https://github.com/Telmo1337)
+Made with care by [Telmo](https://github.com/Telmo1337)
