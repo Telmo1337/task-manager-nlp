@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "command-task-core": ["command-task-core/src"],
+      "shared/*": ["shared/*"]
+    }
+  },
+  "files": [],
+  "references": [
+    { "path": "./shared" },
+    { "path": "./command-task-core" },
+    { "path": "./backend" },
+    { "path": "./runner" }
+  ]
+}

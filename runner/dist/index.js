@@ -1,0 +1,109 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const readline_1 = __importDefault(require("readline"));
+const command_task_core_1 = require("command-task-core");
+const API_URL = "http://localhost:3000/execute";
+let state = command_task_core_1.initialState;
+const rl = readline_1.default.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
+console.log("Task Manager CLI");
+console.log('Type commands like: "create task study english tomorrow at 10"');
+console.log('Type "exit" to quit.\n');
+function prompt() {
+    rl.question("> ", async (input) => {
+        if (input.trim().toLowerCase() === "exit") {
+            rl.close();
+            return;
+        }
+        const { result, state: newState } = (0, command_task_core_1.interpret)(input, state);
+        state = newState;
+        if (result.type === "INFO" || result.type === "QUESTION") {
+            console.log(result.message);
+            return prompt();
+        }
+        if (result.type === "FINAL") {
+            const command = {
+                type: "COMMAND",
+                intent: result.intent,
+                payload: result.payload,
+            };
+            await executeCommand(command);
+            return prompt();
+        }
+        console.log("Unhandled result:", result);
+        prompt();
+    });
+}
+async function executeCommand(command) {
+    try {
+        const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(command),
+        });
+        const result = (await res.json());
+        /* ======================================================
+           ✅ SUCESSO
+           ====================================================== */
+        if (result.status === "SUCCESS") {
+            /* ======================================================
+               🧠 DELETE AMBÍGUO → mostrar + guardar no Core
+               ====================================================== */
+            if (result.intent === "DELETE_TASK" &&
+                typeof result.data === "object" &&
+                result.data !== null &&
+                "ambiguous" in result.data &&
+                result.data.ambiguous === true) {
+                const data = result.data;
+                console.log("Multiple tasks found:");
+                data.candidates.forEach((task) => {
+                    console.log(` #${task.id} — ${task.title} → ${new Date(task.dueAt).toLocaleString("pt-PT")}`);
+                });
+                // 🔴 ESTE É O PONTO CRÍTICO
+                // Guardar candidatos no estado para o Core resolver no próximo input
+                state = {
+                    ...state,
+                    pendingDelete: {
+                        candidates: data.candidates,
+                    },
+                };
+                console.log("Choose a task by ID:");
+                return;
+            }
+            /* ======================================================
+               🧾 LISTA DE TASKS
+               ====================================================== */
+            if (Array.isArray(result.data)) {
+                console.log("✅ Success:");
+                result.data.forEach((task) => {
+                    console.log(` Task #${task.id} — ${task.title} → ${new Date(task.dueAt).toLocaleString("pt-PT")}`);
+                });
+                return;
+            }
+            /* ======================================================
+               🆕 TASK CRIADA / DELETE CONFIRMADO / EDIT
+               ====================================================== */
+            console.log("✅ Success:");
+            console.dir(result.data, { depth: null });
+            return;
+        }
+        /* ======================================================
+           ❌ ERRO
+           ====================================================== */
+        if (result.status === "ERROR") {
+            console.log(result.error.code, "-", result.error.message);
+        }
+        if (result.status === "QUESTION") {
+            console.log("QUESTION:", result.message);
+        }
+    }
+    catch (err) {
+        console.error("Backend unreachable:", err);
+    }
+}
+prompt();

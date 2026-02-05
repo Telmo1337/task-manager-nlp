@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Task` MODIFY `dueAt` DATETIME(3) NOT NULL;
