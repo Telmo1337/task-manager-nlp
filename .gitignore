@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+build/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Prisma
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# Docker volumes
+mysql_data/
+
+# Test coverage
+coverage/
+
+# Misc
+*.tsbuildinfo
+.turbo
