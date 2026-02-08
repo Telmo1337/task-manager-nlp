@@ -7,7 +7,10 @@ const taskService = new TaskService();
 
 export { undoService };
 
-export async function handleUndoAction(sessionId: string): Promise<CommandResult> {
+export async function handleUndoAction(
+  sessionId: string,
+  userId: number
+): Promise<CommandResult> {
   const lastAction = undoService.popLastAction(sessionId);
 
   if (!lastAction) {
@@ -26,7 +29,7 @@ export async function handleUndoAction(sessionId: string): Promise<CommandResult
       case "CREATE_TASK":
         // Undo create = delete the task
         if (lastAction.taskId) {
-          await taskService.deleteTask(lastAction.taskId);
+          await taskService.deleteTask(userId, lastAction.taskId);
           return {
             status: "SUCCESS",
             intent: "UNDO_ACTION",
@@ -45,7 +48,8 @@ export async function handleUndoAction(sessionId: string): Promise<CommandResult
             title: lastAction.data.title || "Untitled",
             date: lastAction.data.dueAt || new Date().toISOString(),
             priority: (lastAction.data.priority as "urgent" | "high" | "normal" | "low") || "normal",
-            recurrence: lastAction.data.recurrence || undefined
+            recurrence: lastAction.data.recurrence || undefined,
+            userId
           });
           return {
             status: "SUCCESS",
@@ -61,7 +65,7 @@ export async function handleUndoAction(sessionId: string): Promise<CommandResult
       case "EDIT_TASK":
         // Undo edit = restore previous state
         if (lastAction.taskId && lastAction.previousData) {
-          await taskService.updateTask(lastAction.taskId, {
+          await taskService.updateTask(userId, lastAction.taskId, {
             title: lastAction.previousData.title,
             dueAt: lastAction.previousData.dueAt ? new Date(lastAction.previousData.dueAt) : undefined,
             priority: lastAction.previousData.priority,

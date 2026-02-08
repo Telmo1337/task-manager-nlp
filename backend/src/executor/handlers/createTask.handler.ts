@@ -7,7 +7,8 @@ const taskService = new TaskService();
 
 export async function createTaskHandler(
   payload: unknown,
-  sessionId: string = "default"
+  sessionId: string = "default",
+  userId: number
 ): Promise<CommandResult> {
   // Validate payload with Zod
   const validation = validateCreateTaskPayload(payload);
@@ -26,7 +27,7 @@ export async function createTaskHandler(
   try {
     const { title, description, date, time, priority, recurrence } = validation.data;
 
-    const result = await taskService.createTask({ title, description, date, time, priority, recurrence });
+    const result = await taskService.createTask({ title, description, date, time, priority, recurrence, userId });
 
     /* ======================================================
        🔁 DUPLICATE → pedir confirmação ao Core

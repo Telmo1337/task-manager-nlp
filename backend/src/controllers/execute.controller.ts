@@ -1,11 +1,25 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { CommandExecutor } from "../executor/commandExecutor";
 import { validateCommand } from "../validators/command.validator";
 import { randomUUID } from "crypto";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 
 const executor = new CommandExecutor();
 
-export async function executeCommandController(req: Request, res: Response) {
+export async function executeCommandController(req: AuthenticatedRequest, res: Response) {
+  // Ensure user is authenticated
+  if (!req.user) {
+    return res.status(401).json({
+      status: "ERROR",
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Authentication required"
+      }
+    });
+  }
+
+  const userId = req.user.userId;
+
   // Validate command with Zod
   const validation = validateCommand(req.body);
   
@@ -28,7 +42,7 @@ export async function executeCommandController(req: Request, res: Response) {
   }
 
   try {
-    const result = await executor.execute(command, sessionId);
+    const result = await executor.execute(command, sessionId, userId);
 
     // Return session ID in response header for client to reuse
     res.setHeader("x-session-id", sessionId);

@@ -7,6 +7,7 @@ interface CreateHistoryData {
   taskTitle: string;
   action: HistoryAction;
   details?: string; // JSON string
+  userId: number;
 }
 
 export class TaskHistoryRepository {
@@ -17,34 +18,38 @@ export class TaskHistoryRepository {
         taskTitle: data.taskTitle,
         action: data.action,
         details: data.details || null,
+        userId: data.userId,
       }
     });
   }
 
-  findAll() {
+  findAll(userId: number) {
     return prisma.taskHistory.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" }
     });
   }
 
-  findByTaskId(taskId: number) {
+  findByTaskId(userId: number, taskId: number) {
     return prisma.taskHistory.findMany({
-      where: { taskId },
+      where: { userId, taskId },
       orderBy: { createdAt: "desc" }
     });
   }
 
-  findRecent(limit: number = 50) {
+  findRecent(userId: number, limit: number = 50) {
     return prisma.taskHistory.findMany({
+      where: { userId },
       orderBy: { createdAt: "desc" },
       take: limit
     });
   }
 
   // Find history within a date range
-  findByDateRange(start: Date, end: Date) {
+  findByDateRange(userId: number, start: Date, end: Date) {
     return prisma.taskHistory.findMany({
       where: {
+        userId,
         createdAt: { gte: start, lte: end }
       },
       orderBy: { createdAt: "desc" }

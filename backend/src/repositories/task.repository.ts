@@ -7,6 +7,7 @@ interface CreateTaskData {
   dueAt: Date;
   priority?: string;
   recurrence?: string | null;
+  userId: number;
 }
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
@@ -21,34 +22,36 @@ export class TaskRepository {
         priority: data.priority || "normal",
         recurrence: data.recurrence || null,
         status: "pending",
+        userId: data.userId,
       }
     });
   }
 
-  findAll() {
+  findAll(userId: number) {
     return prisma.task.findMany({
+      where: { userId },
       orderBy: { dueAt: "asc" }
     });
   }
 
   // Find tasks with specific status
-  findByStatus(status: TaskStatus) {
+  findByStatus(userId: number, status: TaskStatus) {
     return prisma.task.findMany({
-      where: { status },
+      where: { userId, status },
       orderBy: { dueAt: "asc" }
     });
   }
 
   // Find completed tasks (history)
-  findCompleted() {
+  findCompleted(userId: number) {
     return prisma.task.findMany({
-      where: { status: "completed" },
+      where: { userId, status: "completed" },
       orderBy: { completedAt: "desc" }
     });
   }
 
   // Find tasks completed on a specific date
-  findCompletedOnDate(date: Date) {
+  findCompletedOnDate(userId: number, date: Date) {
     const start = new Date(date);
     start.setHours(0, 0, 0, 0);
 
@@ -57,6 +60,7 @@ export class TaskRepository {
 
     return prisma.task.findMany({
       where: {
+        userId,
         status: "completed",
         completedAt: { gte: start, lte: end }
       },
@@ -64,7 +68,7 @@ export class TaskRepository {
     });
   }
 
-  findDueToday() {
+  findDueToday(userId: number) {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
@@ -72,12 +76,12 @@ export class TaskRepository {
     end.setHours(23, 59, 59, 999);
 
     return prisma.task.findMany({
-      where: { dueAt: { gte: start, lte: end } },
+      where: { userId, dueAt: { gte: start, lte: end } },
       orderBy: { dueAt: "asc" }
     });
   }
 
-  findDueTomorrow() {
+  findDueTomorrow(userId: number) {
     const base = new Date();
     base.setDate(base.getDate() + 1);
 
@@ -88,12 +92,12 @@ export class TaskRepository {
     end.setHours(23, 59, 59, 999);
 
     return prisma.task.findMany({
-      where: { dueAt: { gte: start, lte: end } },
+      where: { userId, dueAt: { gte: start, lte: end } },
       orderBy: { dueAt: "asc" }
     });
   }
 
-  findDueOnDate(date: string) {
+  findDueOnDate(userId: number, date: string) {
     // Use resolveDate to handle natural language dates like "february 7"
     const resolved = resolveDate(date);
     
@@ -101,7 +105,7 @@ export class TaskRepository {
     const end = resolved.endOf("day").toJSDate();
 
     return prisma.task.findMany({
-      where: { dueAt: { gte: start, lte: end } },
+      where: { userId, dueAt: { gte: start, lte: end } },
       orderBy: { dueAt: "asc" }
     });
   }
@@ -109,24 +113,29 @@ export class TaskRepository {
   /* ======================================================
      ✅ DUPLICADO = MESMO título NORMALIZADO + MESMO instante
      ====================================================== */
-  findDuplicate(title: string, dueAt: Date) {
+  findDuplicate(userId: number, title: string, dueAt: Date) {
     return prisma.task.findFirst({
       where: {
+        userId,
         title: title.trim().toLowerCase(),
         dueAt: dueAt
       }
     });
   }
 
-  deleteById(id: number) {
-    return prisma.task.delete({ where: { id } });
+  deleteById(userId: number, id: number) {
+    return prisma.task.delete({ 
+      where: { id, userId } 
+    });
   }
 
-  findById(id: number) {
-    return prisma.task.findUnique({ where: { id } });
+  findById(userId: number, id: number) {
+    return prisma.task.findFirst({ 
+      where: { id, userId } 
+    });
   }
 
-  updateById(id: number, data: { 
+  updateById(userId: number, id: number, data: { 
     title?: string; 
     description?: string;
     dueAt?: Date; 
@@ -135,7 +144,7 @@ export class TaskRepository {
     status?: TaskStatus;
   }) {
     return prisma.task.update({
-      where: { id },
+      where: { id, userId },
       data: {
         ...(data.title && { title: data.title.trim().toLowerCase() }),
         ...(data.description !== undefined && { description: data.description }),
@@ -148,9 +157,9 @@ export class TaskRepository {
   }
 
   // Mark task as completed
-  async markCompleted(id: number) {
+  async markCompleted(userId: number, id: number) {
     return prisma.task.update({
-      where: { id },
+      where: { id, userId },
       data: {
         status: "completed",
         completedAt: new Date()
@@ -159,7 +168,7 @@ export class TaskRepository {
   }
 
   // Update task status
-  async updateStatus(id: number, status: TaskStatus) {
+  async updateStatus(userId: number, id: number, status: TaskStatus) {
     const data: any = { status };
     if (status === "completed") {
       data.completedAt = new Date();
@@ -167,7 +176,7 @@ export class TaskRepository {
       data.completedAt = null;
     }
     return prisma.task.update({
-      where: { id },
+      where: { id, userId },
       data
     });
   }
@@ -175,9 +184,10 @@ export class TaskRepository {
     /* ======================================================
      🔍 PROCURAR POR TÍTULO (para DELETE inteligente)
      ====================================================== */
-  findByTitle(title: string) {
+  findByTitle(userId: number, title: string) {
     return prisma.task.findMany({
       where: {
+        userId,
         title: {
           contains: title.trim().toLowerCase()
         }
@@ -189,8 +199,10 @@ export class TaskRepository {
   /* ======================================================
      🗑️ DELETE ALL TASKS
      ====================================================== */
-  async deleteAll() {
-    const result = await prisma.task.deleteMany({});
+  async deleteAll(userId: number) {
+    const result = await prisma.task.deleteMany({
+      where: { userId }
+    });
     return result.count;
   }
 }

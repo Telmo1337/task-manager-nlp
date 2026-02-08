@@ -18,6 +18,10 @@ model Task {
   completedAt DateTime? // when the task was completed
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model TaskHistory {
@@ -27,4 +31,18 @@ model TaskHistory {
   action    String   // created, updated, completed, deleted, restored
   details   String?  @db.Text // JSON with change details
   createdAt DateTime @default(now())
+  userId    Int
+
+  @@index([userId])
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  password     String
+  name         String
+  refreshToken String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  tasks        Task[]
 }

@@ -13,7 +13,8 @@ const DeleteTaskPayloadSchema = z.union([
 
 export async function deleteTaskHandler(
   payload: unknown,
-  sessionId: string = "default"
+  sessionId: string = "default",
+  userId: number
 ): Promise<CommandResult> {
   const validation = DeleteTaskPayloadSchema.safeParse(payload);
   
@@ -31,7 +32,7 @@ export async function deleteTaskHandler(
   const data = validation.data;
 
   try {
-    const result = await taskService.deleteTaskSmart(data);
+    const result = await taskService.deleteTaskSmart(userId, data);
 
     /* ======================================================
        ❓ DELETE AMBÍGUO → devolver candidatos

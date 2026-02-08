@@ -12,3 +12,9 @@ export type { UseTaskSelectionReturn } from "./useTaskSelection";
 
 export { useCalendarVisibility } from "./useCalendarVisibility";
 export type { UseCalendarVisibilityReturn } from "./useCalendarVisibility";
+
+export { useAuth } from "./useAuth";
+
+export { useConfirmModal } from "./useConfirmModal";
+
+export { useLenis } from "./useLenis";

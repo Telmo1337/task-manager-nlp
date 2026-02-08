@@ -44,7 +44,8 @@ function setSessionState(sessionId: string, state: ConversationState) {
 
 export async function dispatchCommand(
   command: Command,
-  sessionId: string = "default"
+  sessionId: string = "default",
+  userId: number
 ): Promise<CommandResult> {
 
   /* ================================
@@ -63,7 +64,7 @@ export async function dispatchCommand(
         type: "COMMAND",
         intent: result.intent,
         payload: result.payload,
-      }, sessionId);
+      }, sessionId, userId);
     }
 
     // QUESTION / INFO
@@ -75,22 +76,22 @@ export async function dispatchCommand(
      ================================ */
   switch (command.intent) {
     case "CREATE_TASK":
-      return createTaskHandler(command.payload, sessionId);
+      return createTaskHandler(command.payload, sessionId, userId);
 
     case "LIST_TASKS":
-      return listTasksHandler(command.payload);
+      return listTasksHandler(command.payload, sessionId, userId);
 
     case "DELETE_TASK":
-      return deleteTaskHandler(command.payload, sessionId);
+      return deleteTaskHandler(command.payload, sessionId, userId);
 
     case "DELETE_ALL_TASKS":
-      return deleteAllTasksHandler();
+      return deleteAllTasksHandler(command.payload, sessionId, userId);
 
     case "EDIT_TASK":
-      return editTaskHandler(command.payload, sessionId);
+      return editTaskHandler(command.payload, sessionId, userId);
 
     case "UNDO_ACTION":
-      return handleUndoAction(sessionId);
+      return handleUndoAction(sessionId, userId);
 
     default:
       return {

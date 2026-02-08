@@ -28,10 +28,23 @@ function extractNewTitle(text: string): string | null {
   // check if it looks like a title (not a date/time)
   if (!cleaned || cleaned.length < 2) return null;
   
-  // Don't treat dates/times as titles
+  // Don't treat times as titles (various formats)
   if (/^\d{1,2}(:\d{2})?\s?(am|pm|h)?$/i.test(cleaned)) return null;
-  if (/^(today|tomorrow|next\s+\w+)$/i.test(cleaned)) return null;
+  if (/^(at\s+)?\d{1,2}(:\d{2})?\s?(am|pm|h)?$/i.test(cleaned)) return null;
+  if (/^(to\s+)?\d{1,2}(:\d{2})?\s?(am|pm|h)?$/i.test(cleaned)) return null;
+  
+  // Don't treat dates as titles
+  if (/^(today|tomorrow|next\s+\w+|monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(cleaned)) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) return null;
+  if (/^(at\s+|to\s+)?(today|tomorrow|next\s+\w+|monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(cleaned)) return null;
+  
+  // Don't treat priority as titles
+  if (/^(high|medium|low)\s*(priority)?$/i.test(cleaned)) return null;
+  if (/^(to\s+)?(high|medium|low)\s*(priority)?$/i.test(cleaned)) return null;
+  
+  // Don't treat time-related word phrases as titles
+  if (/^(time|date)\s+(to\s+)?\d/i.test(cleaned)) return null;
+  if (/^(change\s+)?(time|date)/i.test(cleaned)) return null;
   
   return cleaned;
 }
@@ -319,6 +332,62 @@ export function interpret(
       };
     }
 
+    // Check if user typed just "time" keyword - prompt for the actual time
+    if (/^(time|the\s+time|change\s+time)$/i.test(normalized)) {
+      return {
+        result: {
+          type: "QUESTION",
+          message: "What time would you like to set? (e.g., 5pm, 14:30)",
+        },
+        state: {
+          ...state,
+          awaitingTime: true,
+        },
+      };
+    }
+
+    // Check if user typed just "date" keyword - prompt for the actual date
+    if (/^(date|the\s+date|change\s+date)$/i.test(normalized)) {
+      return {
+        result: {
+          type: "QUESTION",
+          message: "What date would you like to set? (e.g., tomorrow, next monday, feb 10)",
+        },
+        state: {
+          ...state,
+          awaitingDate: true,
+        },
+      };
+    }
+
+    // Check if user typed just "title" keyword - prompt for the actual title
+    if (/^(title|the\s+title|name|change\s+title|rename)$/i.test(normalized)) {
+      return {
+        result: {
+          type: "QUESTION",
+          message: "What would you like to rename it to?",
+        },
+        state: {
+          ...state,
+          awaitingTitle: true,
+        },
+      };
+    }
+
+    // Check if user typed just "priority" keyword - prompt for the actual priority
+    if (/^(priority|the\s+priority|change\s+priority)$/i.test(normalized)) {
+      return {
+        result: {
+          type: "QUESTION",
+          message: "What priority? (high, medium, or low)",
+        },
+        state: {
+          ...state,
+          awaitingPriority: true,
+        },
+      };
+    }
+
     // If awaiting description text, use the entire input as description
     if (state.awaitingDescription) {
       return {
@@ -330,18 +399,97 @@ export function interpret(
       };
     }
 
+    // If awaiting time, parse and use the time
+    if (state.awaitingTime) {
+      const { ctx } = runPipeline(input);
+      if (ctx.slots.time?.length) {
+        return {
+          result: finalResult("EDIT_TASK", {
+            id: state.awaitingEditChanges.taskId,
+            time: ctx.slots.time[0],
+          }),
+          state: resetState(),
+        };
+      }
+      return {
+        result: {
+          type: "QUESTION",
+          message: "I didn't understand that time. Try something like '5pm' or '14:30'.",
+        },
+        state,
+      };
+    }
+
+    // If awaiting date, parse and use the date
+    if (state.awaitingDate) {
+      const { ctx } = runPipeline(input);
+      if (ctx.slots.date?.length) {
+        return {
+          result: finalResult("EDIT_TASK", {
+            id: state.awaitingEditChanges.taskId,
+            date: ctx.slots.date[0],
+          }),
+          state: resetState(),
+        };
+      }
+      return {
+        result: {
+          type: "QUESTION",
+          message: "I didn't understand that date. Try 'tomorrow', 'next monday', or 'feb 10'.",
+        },
+        state,
+      };
+    }
+
+    // If awaiting title, use the entire input as title
+    if (state.awaitingTitle) {
+      return {
+        result: finalResult("EDIT_TASK", {
+          id: state.awaitingEditChanges.taskId,
+          title: input.trim(),
+        }),
+        state: resetState(),
+      };
+    }
+
+    // If awaiting priority, parse and use the priority
+    if (state.awaitingPriority) {
+      const { ctx } = runPipeline(input);
+      if (ctx.slots.priority?.length) {
+        return {
+          result: finalResult("EDIT_TASK", {
+            id: state.awaitingEditChanges.taskId,
+            priority: ctx.slots.priority[0],
+          }),
+          state: resetState(),
+        };
+      }
+      // Try to match priority directly
+      const priorityMatch = input.toLowerCase().match(/\b(high|medium|low)\b/);
+      if (priorityMatch) {
+        return {
+          result: finalResult("EDIT_TASK", {
+            id: state.awaitingEditChanges.taskId,
+            priority: priorityMatch[1].toUpperCase(),
+          }),
+          state: resetState(),
+        };
+      }
+      return {
+        result: {
+          type: "QUESTION",
+          message: "Please choose: high, medium, or low.",
+        },
+        state,
+      };
+    }
+
     // Parse what the user wants to change
     const { ctx } = runPipeline(input);
     
     const payload: Record<string, any> = {
       id: state.awaitingEditChanges.taskId,
     };
-
-    // Extract new title if present (use original input to preserve case)
-    const newTitle = extractNewTitle(input);
-    if (newTitle) {
-      payload.title = newTitle;
-    }
 
     // Extract new date if present
     if (ctx.slots.date?.length) {
@@ -361,6 +509,15 @@ export function interpret(
     // Extract new description if present
     if (ctx.slots.description?.length) {
       payload.description = ctx.slots.description[0];
+    }
+
+    // Only extract title if no date/time/priority was found
+    // This prevents "at 5pm" from being treated as a title
+    if (!payload.date && !payload.time && !payload.priority && !payload.description) {
+      const newTitle = extractNewTitle(input);
+      if (newTitle) {
+        payload.title = newTitle;
+      }
     }
 
     // If nothing meaningful was extracted, ask again

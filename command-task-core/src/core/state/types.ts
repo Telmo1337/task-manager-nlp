@@ -39,8 +39,12 @@ export interface ConversationState {
     taskId: number;
   };
 
-  // EDIT - awaiting description text
+  // EDIT - awaiting specific field values
   awaitingDescription?: boolean;
+  awaitingTime?: boolean;
+  awaitingDate?: boolean;
+  awaitingTitle?: boolean;
+  awaitingPriority?: boolean;
 
   // DELETE ALL confirmation
   awaitingDeleteAllConfirmation?: boolean;

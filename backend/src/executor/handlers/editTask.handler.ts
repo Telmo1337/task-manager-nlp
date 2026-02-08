@@ -7,7 +7,8 @@ const taskService = new TaskService();
 
 export async function editTaskHandler(
   payload: unknown,
-  sessionId: string = "default"
+  sessionId: string = "default",
+  userId: number
 ): Promise<CommandResult> {
   const validation = validateEditTaskPayload(payload);
   
@@ -26,9 +27,9 @@ export async function editTaskHandler(
     const taskId = Number(validation.data.id);
     
     // Fetch current state before editing for undo capability
-    const previousTask = await taskService.getTaskById(taskId);
+    const previousTask = await taskService.getTaskById(userId, taskId);
     
-    const result = await taskService.editTask(validation.data);
+    const result = await taskService.editTask({ ...validation.data, userId });
 
     // Record undoable action with previous state
     if (previousTask) {

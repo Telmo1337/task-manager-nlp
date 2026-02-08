@@ -3,9 +3,13 @@ import { TaskService } from "../../services/task.service";
 
 const taskService = new TaskService();
 
-export async function deleteAllTasksHandler(): Promise<CommandResult> {
+export async function deleteAllTasksHandler(
+  payload: unknown,
+  sessionId: string = "default",
+  userId: number
+): Promise<CommandResult> {
   try {
-    const count = await taskService.deleteAllTasks();
+    const count = await taskService.deleteAllTasks(userId);
 
     return {
       status: "SUCCESS",

@@ -25,7 +25,9 @@ type ListTasksFilter =
   | { type: "PENDING" };
 
 export async function listTasksHandler(
-  payload: unknown
+  payload: unknown,
+  sessionId: string = "default",
+  userId: number
 ): Promise<CommandResult> {
   // 1️⃣ valida runtime + TS
   if (!isListTasksPayload(payload)) {
@@ -61,7 +63,7 @@ export async function listTasksHandler(
   }
 
   // 3️⃣ execução segura
-  const tasks = await taskService.listTasksWithFilter(filter);
+  const tasks = await taskService.listTasksWithFilter(userId, filter);
 
   return {
     status: "SUCCESS",

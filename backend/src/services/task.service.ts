@@ -9,6 +9,7 @@ interface CreateTaskInput {
   time?: string;
   priority?: "urgent" | "high" | "normal" | "low";
   recurrence?: string;
+  userId: number;
 }
 
 type ListTasksFilter =
@@ -29,6 +30,7 @@ interface EditTaskInput {
   priority?: unknown;
   recurrence?: unknown;
   status?: unknown;
+  userId: number;
 }
 
 export class TaskService {
@@ -46,6 +48,7 @@ export class TaskService {
     const priority = input.priority || "normal";
     const recurrence = input.recurrence || null;
     const description = input.description || null;
+    const userId = input.userId;
 
     // ⚠️ se não houver hora, NÃO normalizamos para 00:00
     if (!input.time) {
@@ -57,6 +60,7 @@ export class TaskService {
         dueAt,
         priority,
         recurrence,
+        userId,
       });
 
       // Record history
@@ -64,7 +68,8 @@ export class TaskService {
         taskId: created.id,
         taskTitle: created.title,
         action: "created",
-        details: JSON.stringify({ dueAt, priority, recurrence })
+        details: JSON.stringify({ dueAt, priority, recurrence }),
+        userId,
       });
 
       return {
@@ -76,7 +81,7 @@ export class TaskService {
     // ⏱️ daqui para baixo SÓ com hora
     const dueAt = resolveDateTime(input.date, input.time);
 
-    const duplicate = await this.repository.findDuplicate(input.title, dueAt);
+    const duplicate = await this.repository.findDuplicate(userId, input.title, dueAt);
 
     if (duplicate) {
       return {
@@ -95,6 +100,7 @@ export class TaskService {
       dueAt,
       priority,
       recurrence,
+      userId,
     });
 
     // Record history
@@ -102,7 +108,8 @@ export class TaskService {
       taskId: created.id,
       taskTitle: created.title,
       action: "created",
-      details: JSON.stringify({ dueAt, priority, recurrence })
+      details: JSON.stringify({ dueAt, priority, recurrence }),
+      userId,
     });
 
     return {
@@ -114,37 +121,37 @@ export class TaskService {
   /* ======================================================
      LIST TASKS
      ====================================================== */
-  async listTasksWithFilter(filter: ListTasksFilter) {
+  async listTasksWithFilter(userId: number, filter: ListTasksFilter) {
     let tasks;
 
     switch (filter.type) {
       case "TODAY":
-        tasks = await this.repository.findDueToday();
+        tasks = await this.repository.findDueToday(userId);
         break;
 
       case "TOMORROW":
-        tasks = await this.repository.findDueTomorrow();
+        tasks = await this.repository.findDueTomorrow(userId);
         break;
 
       case "DATE":
-        tasks = await this.repository.findDueOnDate(filter.value);
+        tasks = await this.repository.findDueOnDate(userId, filter.value);
         break;
 
       case "COMPLETED":
-        tasks = await this.repository.findCompleted();
+        tasks = await this.repository.findCompleted(userId);
         break;
 
       case "COMPLETED_ON_DATE":
         const date = new Date(filter.value);
-        tasks = await this.repository.findCompletedOnDate(date);
+        tasks = await this.repository.findCompletedOnDate(userId, date);
         break;
 
       case "PENDING":
-        tasks = await this.repository.findByStatus("pending");
+        tasks = await this.repository.findByStatus(userId, "pending");
         break;
 
       default:
-        tasks = await this.repository.findAll();
+        tasks = await this.repository.findAll(userId);
     }
 
     return tasks.map((task) => ({
@@ -160,13 +167,13 @@ export class TaskService {
     }));
   }
 
-  async deleteTask(taskId: unknown) {
+  async deleteTask(userId: number, taskId: unknown) {
     const id = Number(taskId);
     if (!id || Number.isNaN(id)) {
       throw new Error("INVALID_TASK_ID");
     }
 
-    await this.repository.deleteById(id);
+    await this.repository.deleteById(userId, id);
     return { id };
   }
 
@@ -175,6 +182,8 @@ export class TaskService {
     if (!id || Number.isNaN(id)) {
       throw new Error("INVALID_TASK_ID");
     }
+
+    const userId = input.userId;
 
     const data: { 
       title?: string; 
@@ -207,14 +216,15 @@ export class TaskService {
       throw new Error("NO_FIELDS_TO_UPDATE");
     }
 
-    const updated = await this.repository.updateById(id, data);
+    const updated = await this.repository.updateById(userId, id, data);
 
     // Record history
     await this.historyRepository.create({
       taskId: updated.id,
       taskTitle: updated.title,
       action: data.status === "completed" ? "completed" : "updated",
-      details: JSON.stringify(data)
+      details: JSON.stringify(data),
+      userId,
     });
 
     return {
@@ -229,15 +239,15 @@ export class TaskService {
   /* ======================================================
      DELETE INTELIGENTE
      ====================================================== */
-  async deleteTaskSmart(input: { id?: number; title?: string }) {
+  async deleteTaskSmart(userId: number, input: { id?: number; title?: string }) {
     // 1️⃣ DELETE direto por ID
     if (input.id) {
       // Fetch task data before deleting for undo capability
-      const task = await this.repository.findById(input.id);
+      const task = await this.repository.findById(userId, input.id);
       if (!task) {
         throw new Error("TASK_NOT_FOUND");
       }
-      await this.repository.deleteById(input.id);
+      await this.repository.deleteById(userId, input.id);
       return { 
         deleted: true,
         deletedTask: {
@@ -255,7 +265,7 @@ export class TaskService {
       throw new Error("DELETE_NEEDS_CRITERIA");
     }
 
-    const matches = await this.repository.findByTitle(input.title);
+    const matches = await this.repository.findByTitle(userId, input.title);
 
     if (matches.length === 0) {
       throw new Error("TASK_NOT_FOUND");
@@ -263,7 +273,7 @@ export class TaskService {
 
     if (matches.length === 1) {
       const task = matches[0];
-      await this.repository.deleteById(task.id);
+      await this.repository.deleteById(userId, task.id);
       return { 
         deleted: true,
         deletedTask: {
@@ -291,6 +301,7 @@ export class TaskService {
      UPDATE TASK (for undo)
      ====================================================== */
   async updateTask(
+    userId: number,
     taskId: number,
     data: {
       title?: string;
@@ -299,40 +310,41 @@ export class TaskService {
       recurrence?: string | null;
     }
   ) {
-    return this.repository.updateById(taskId, data);
+    return this.repository.updateById(userId, taskId, data);
   }
 
   /* ======================================================
      GET TASK BY ID (for undo - fetch before edit)
      ====================================================== */
-  async getTaskById(taskId: number) {
-    return this.repository.findById(taskId);
+  async getTaskById(userId: number, taskId: number) {
+    return this.repository.findById(userId, taskId);
   }
 
   /* ======================================================
      DELETE ALL TASKS
      ====================================================== */
-  async deleteAllTasks() {
-    return this.repository.deleteAll();
+  async deleteAllTasks(userId: number) {
+    return this.repository.deleteAll(userId);
   }
 
   /* ======================================================
      UPDATE TASK STATUS
      ====================================================== */
-  async updateTaskStatus(taskId: number, status: TaskStatus) {
-    const task = await this.repository.findById(taskId);
+  async updateTaskStatus(userId: number, taskId: number, status: TaskStatus) {
+    const task = await this.repository.findById(userId, taskId);
     if (!task) {
       throw new Error("TASK_NOT_FOUND");
     }
 
-    const updated = await this.repository.updateStatus(taskId, status);
+    const updated = await this.repository.updateStatus(userId, taskId, status);
 
     // Record history
     await this.historyRepository.create({
       taskId: updated.id,
       taskTitle: updated.title,
       action: status === "completed" ? "completed" : "updated",
-      details: JSON.stringify({ status, previousStatus: task.status })
+      details: JSON.stringify({ status, previousStatus: task.status }),
+      userId,
     });
 
     return updated;
@@ -341,21 +353,21 @@ export class TaskService {
   /* ======================================================
      GET TASK HISTORY
      ====================================================== */
-  async getTaskHistory(taskId?: number) {
+  async getTaskHistory(userId: number, taskId?: number) {
     if (taskId) {
-      return this.historyRepository.findByTaskId(taskId);
+      return this.historyRepository.findByTaskId(userId, taskId);
     }
-    return this.historyRepository.findRecent();
+    return this.historyRepository.findRecent(userId);
   }
 
   /* ======================================================
      GET TASKS FOR CALENDAR (month view)
      ====================================================== */
-  async getTasksForCalendar(year: number, month: number) {
+  async getTasksForCalendar(userId: number, year: number, month: number) {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 0, 23, 59, 59, 999);
     
-    const tasks = await this.repository.findAll();
+    const tasks = await this.repository.findAll(userId);
     
     return tasks
       .filter(task => {

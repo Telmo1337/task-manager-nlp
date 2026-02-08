@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { motion } from "framer-motion"
 import { Calendar as CalendarIcon, ListTodo } from "lucide-react"
 import { ChatLayout } from "./components/chat/ChatLayout"
 import { CommandInput } from "./components/chat/CommandInput"
@@ -9,6 +10,7 @@ import { BottomSheet } from "./components/ui/BottomSheet"
 import { SlideOver } from "./components/ui/SlideOver"
 import { useChat, useTaskSelection } from "./hooks"
 import { useCalendarVisibility } from "./hooks/useCalendarVisibility"
+import { pageVariants, pageTransition } from "./lib/animations"
 import type { TaskItem } from "./types/chat"
 
 function App() {
@@ -50,16 +52,23 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-neutral-100 dark:bg-neutral-950 overflow-hidden">
+    <motion.div 
+      className="flex h-screen overflow-hidden"
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={pageTransition}
+    >
       {/* Main Content Area */}
       <main className="flex-1 flex items-center justify-center p-2 sm:p-4 lg:p-6 pb-16 lg:pb-6">
         
         {/* Desktop Container - groups all panels with gaps */}
-        <div className="flex gap-4 h-full max-h-[600px] w-full max-w-5xl">
+        <div className="flex gap-4 h-full max-h-150 w-full max-w-5xl">
           
           {/* Calendar Panel - Desktop only (lg+) */}
           {showCalendar && (
-            <div className="hidden lg:flex flex-col w-64 max-h-[420px] flex-shrink-0 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+            <div className="hidden lg:flex flex-col w-64 max-h-105 shrink-0 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden">
               <Calendar 
                 onSelectTask={handleTaskClick}
                 onSelectDate={handleDateSelect}
@@ -68,7 +77,7 @@ function App() {
           )}
 
           {/* Chat Panel - Center, full width on mobile */}
-          <div className="w-full flex-1 min-w-0 max-h-[600px] flex flex-col">
+          <div className="w-full flex-1 min-w-0 max-h-150 flex flex-col">
             <ChatLayout 
               onClearChat={handleClearChat}
               onToggleCalendar={toggleCalendar}
@@ -85,7 +94,7 @@ function App() {
 
           {/* Task Detail Panel - Desktop only (xl+) */}
           {selectedTask && (
-            <div className="hidden xl:flex flex-col w-72 max-h-[420px] flex-shrink-0 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+            <div className="hidden xl:flex flex-col w-72 max-h-105 shrink-0 bg-white dark:bg-neutral-900 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-800 overflow-hidden">
               <TaskDetail 
                 task={selectedTask}
                 onClose={clearSelection}
@@ -97,11 +106,11 @@ function App() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 px-4 py-2 z-40">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 px-4 py-2 z-40">
         <div className="flex justify-around items-center max-w-md mx-auto">
           <button
             onClick={() => setShowMobileCalendar(true)}
-            className="flex flex-col items-center gap-1 p-2 text-neutral-600 dark:text-neutral-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+            className="flex flex-col items-center gap-1 p-2 text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             <CalendarIcon className="w-5 h-5" />
             <span className="text-xs">Calendar</span>
@@ -110,7 +119,7 @@ function App() {
           {selectedTask && (
             <button
               onClick={() => setShowMobileTaskDetail(true)}
-              className="flex flex-col items-center gap-1 p-2 text-blue-500 dark:text-blue-400"
+              className="flex flex-col items-center gap-1 p-2 text-blue-600 dark:text-blue-400"
             >
               <ListTodo className="w-5 h-5" />
               <span className="text-xs">Task</span>
@@ -166,7 +175,7 @@ function App() {
           />
         </SlideOver>
       </div>
-    </div>
+    </motion.div>
   )
 }
 

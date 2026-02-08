@@ -10,6 +10,8 @@ describe("TaskService", () => {
   let repository: jest.Mocked<TaskRepository>;
   let historyRepository: jest.Mocked<TaskHistoryRepository>;
 
+  const mockUserId = 1;
+
   beforeEach(() => {
     service = new TaskService();
     repository = (service as any).repository;
@@ -30,7 +32,8 @@ describe("TaskService", () => {
         recurrence: null,
         completedAt: null,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        userId: mockUserId
       });
 
       repository.findDueOnDate.mockResolvedValue([]);
@@ -38,7 +41,8 @@ describe("TaskService", () => {
       const result = await service.createTask({
         title: "study english",
         date: "2026-01-21",
-        time: "10"
+        time: "10",
+        userId: mockUserId
       });
 
       expect(result.duplicate).toBe(false);
@@ -58,14 +62,16 @@ describe("TaskService", () => {
           recurrence: null,
           completedAt: null,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          userId: mockUserId
         }
       ]);
 
       const result = await service.createTask({
         title: "study english",
         date: "2026-01-21",
-        time: "10"
+        time: "10",
+        userId: mockUserId
       });
 
       expect(result.duplicate).toBe(true);

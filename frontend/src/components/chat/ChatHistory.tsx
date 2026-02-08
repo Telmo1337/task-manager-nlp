@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { AlertCircle, ChevronRight, Circle, CircleAlert, Repeat } from "lucide-react"
 import type { ChatMessage, TaskItem } from "@/types/chat"
+import { messageVariants } from "@/lib/animations"
 
 // ============================================================================
 // Types
@@ -72,7 +74,7 @@ function getStatusColor(status?: string): string {
 
 function getMessageClasses(role: string): string {
   if (role === "user") {
-    return "max-w-[80%] bg-neutral-800 dark:bg-neutral-700 text-white px-4 py-2 rounded-lg ml-auto"
+    return "max-w-[80%] bg-blue-600 text-white px-4 py-2 rounded-lg ml-auto"
   }
   return "max-w-[80%] bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 px-4 py-2 rounded-lg mr-auto"
 }
@@ -221,10 +223,30 @@ export function ChatHistory({ messages, onTaskClick, isLoading }: ChatHistoryPro
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
-      {messages.map((msg, i) => (
-        <MessageBubble key={i} message={msg} onTaskClick={onTaskClick} />
-      ))}
-      {isLoading && <TypingIndicator />}
+      <AnimatePresence mode="popLayout">
+        {messages.map((msg, i) => (
+          <motion.div
+            key={i}
+            variants={messageVariants}
+            initial="initial"
+            animate="animate"
+            layout
+          >
+            <MessageBubble message={msg} onTaskClick={onTaskClick} />
+          </motion.div>
+        ))}
+        {isLoading && (
+          <motion.div
+            key="typing"
+            variants={messageVariants}
+            initial="initial"
+            animate="animate"
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
+            <TypingIndicator />
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div ref={bottomRef} />
     </div>
   )
