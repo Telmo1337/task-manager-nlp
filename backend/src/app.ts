@@ -4,11 +4,13 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { executeCommandController } from "./controllers/execute.controller";
 import { TaskService } from "./services/task.service";
 import authRoutes from "./routes/auth.routes";
 import { authMiddleware, AuthenticatedRequest } from "./middlewares/auth.middleware";
+import { httpsRedirect } from "./middlewares/https.middleware";
 
 dotenv.config();
 
@@ -16,6 +18,9 @@ const taskService = new TaskService();
 
 export function createApp() {
   const app = express();
+
+  // Security: HTTPS redirect in production
+  app.use(httpsRedirect);
 
   // Security: HTTP headers protection
   app.use(helmet({
@@ -64,7 +69,11 @@ export function createApp() {
     methods: ["GET", "POST", "PUT", "PATCH"],
     allowedHeaders: ["Content-Type", "x-session-id", "Authorization"],
     exposedHeaders: ["x-session-id"],
+    credentials: true, // Allow cookies to be sent
   }));
+
+  // Cookie parser for httpOnly cookies
+  app.use(cookieParser());
 
   app.use(express.json({ limit: "10kb" })); // Limit body size for security
 

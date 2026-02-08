@@ -37,12 +37,46 @@ model TaskHistory {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  password     String
-  name         String
-  refreshToken String?   @db.Text
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  tasks        Task[]
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String
+  name          String
+  refreshToken  String?        @db.Text
+  lockedUntil   DateTime?      // Account lockout timestamp
+  failedAttempts Int           @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  tasks         Task[]
+  loginAttempts LoginAttempt[]
+  securityLogs  SecurityLog[]
+}
+
+model LoginAttempt {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  ip        String
+  userAgent String?  @db.Text
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([ip])
+  @@index([createdAt])
+}
+
+model SecurityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // login, logout, failed_login, password_change, account_locked, etc.
+  ip        String
+  userAgent String?  @db.Text
+  details   String?  @db.Text // JSON with additional context
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }

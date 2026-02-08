@@ -62,6 +62,12 @@ export class AuthService {
     };
   }
 
+  async findUserByEmail(email: string): Promise<{ id: number; email: string } | null> {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) return null;
+    return { id: user.id, email: user.email };
+  }
+
   async logout(userId: number): Promise<void> {
     await this.userRepository.updateRefreshToken(userId, null);
   }
@@ -141,9 +147,12 @@ export class AuthService {
       throw new Error("PASSWORD_REQUIRED");
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       throw new Error("PASSWORD_TOO_SHORT");
     }
+
+    // Password complexity is now handled by Zod schema in the validator
+    // This is a fallback check
   }
 
   private validateName(name: string): void {

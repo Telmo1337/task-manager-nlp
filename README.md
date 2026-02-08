@@ -242,9 +242,15 @@ Supported date formats:
 |---------|-------------|
 | **Helmet** | Sets secure HTTP headers (CSP, XSS protection, frame options) |
 | **Rate Limiting** | 100 requests/15min globally, 10/15min for auth routes |
+| **Zod Validation** | Strong input validation with detailed error messages |
+| **Password Policy** | 8+ chars, uppercase, lowercase, number, special char required |
 | **Password Hashing** | bcrypt with 12 salt rounds |
 | **JWT Tokens** | Short-lived access tokens (15m) + refresh tokens (7d) |
-| **CORS** | Configurable origin whitelist |
+| **httpOnly Cookies** | Secure cookie storage for tokens (XSS protection) |
+| **Account Lockout** | 5 failed attempts = 15 minute lockout |
+| **Audit Logging** | Security events logged to database |
+| **HTTPS Redirect** | Automatic redirect to HTTPS in production |
+| **CORS** | Configurable origin whitelist with credentials |
 | **Body Size Limit** | JSON payloads limited to 10KB |
 | **Env Enforcement** | Required secrets in production, warnings in dev |
 
