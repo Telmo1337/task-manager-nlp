@@ -417,3 +417,5 @@ export function PricingPage() {
     </motion.div>
   );
 }
+
+export default PricingPage;

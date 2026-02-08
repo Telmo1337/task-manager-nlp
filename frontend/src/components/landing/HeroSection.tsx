@@ -48,7 +48,7 @@ export function HeroSection() {
         </Link>
         <Link
           to="/login"
-          className="inline-flex items-center gap-2 px-6 py-3 text-neutral-700 dark:text-neutral-300 font-medium hover:text-neutral-900 dark:hover:text-white transition-colors text-lg"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-neutral-700 dark:text-neutral-300 font-medium hover:text-neutral-900 dark:hover:text-white hover:bg-blue-100 dark:hover:bg-blue-950 transition-colors text-lg"
         >
           {HERO.secondaryCta}
         </Link>

@@ -42,3 +42,5 @@ export function LandingPage() {
     </motion.div>
   );
 }
+
+export default LandingPage;

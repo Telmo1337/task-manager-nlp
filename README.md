@@ -21,6 +21,8 @@ A modern task management application with a **natural language chat interface**.
 - **Smooth Scroll** - Butter-smooth scrolling experience with Lenis
 - **Chat Persistence** - Your conversation history is saved locally
 - **Undo Support** - Made a mistake? Just type "undo"
+- **Security Hardened** - Helmet, rate limiting, and secure headers
+- **Performance Optimized** - Gzip compression and lazy loading
 
 ## Tech Stack
 
@@ -28,6 +30,8 @@ A modern task management application with a **natural language chat interface**.
 |-------|------------|
 | Frontend | React 19, Vite, Tailwind CSS 4, Framer Motion, Lucide Icons |
 | Backend | Express 5, Prisma ORM, MySQL, JWT Authentication |
+| Security | Helmet, express-rate-limit, bcrypt, CORS |
+| Performance | Compression (gzip), React.lazy code splitting |
 | NLP Engine | Custom `command-task-core` module |
 | Database | MySQL 8.0 (Docker) |
 | Smooth Scroll | Lenis |
@@ -89,6 +93,12 @@ Create `backend/.env`:
 ```env
 DATABASE_URL="mysql://root:root@localhost:3306/taskmanager"
 PORT=3000
+CORS_ORIGIN=http://localhost:5173
+
+# Authentication (required in production)
+JWT_SECRET="your-secure-jwt-secret-min-32-chars"
+JWT_REFRESH_SECRET="your-secure-refresh-secret-min-32-chars"
+NODE_ENV=development
 ```
 
 ## How to Use
@@ -223,6 +233,28 @@ Supported date formats:
 - Relative: "today", "tomorrow", "next week", "in 5 days"
 - Absolute: "January 15", "01/15/2026", "15th of March"
 - Day names: "monday", "next friday", "this saturday"
+
+## Security & Performance
+
+### Security Features
+
+| Feature | Description |
+|---------|-------------|
+| **Helmet** | Sets secure HTTP headers (CSP, XSS protection, frame options) |
+| **Rate Limiting** | 100 requests/15min globally, 10/15min for auth routes |
+| **Password Hashing** | bcrypt with 12 salt rounds |
+| **JWT Tokens** | Short-lived access tokens (15m) + refresh tokens (7d) |
+| **CORS** | Configurable origin whitelist |
+| **Body Size Limit** | JSON payloads limited to 10KB |
+| **Env Enforcement** | Required secrets in production, warnings in dev |
+
+### Performance Optimizations
+
+| Feature | Description |
+|---------|-------------|
+| **Compression** | Gzip compression for all responses |
+| **Code Splitting** | React.lazy() for route-based lazy loading |
+| **Suspense** | Loading states during chunk downloads |
 
 ## License
 

@@ -143,3 +143,5 @@ export function RegisterPage() {
     </AuthLayout>
   );
 }
+
+export default RegisterPage;

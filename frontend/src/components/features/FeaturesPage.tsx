@@ -356,3 +356,5 @@ export function FeaturesPage() {
     </motion.div>
   );
 }
+
+export default FeaturesPage;
