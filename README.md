@@ -1,4 +1,6 @@
-# Task Manager NLP
+# TaskFlow - Natural Language Task Manager
+
+> ⚠️ **Disclaimer**: This is a **fictional product** created for **educational and learning purposes only**. It is not intended for commercial use or production deployment. The branding, pricing, and "Pro" features mentioned are part of the demo experience.
 
 A modern task management application with a **natural language chat interface**. Instead of clicking buttons and filling forms, simply type what you want to do in plain English.
 
@@ -12,7 +14,11 @@ A modern task management application with a **natural language chat interface**.
 - **Recurring Tasks** - Support for daily, weekly, monthly recurrence
 - **Task Descriptions** - Add detailed descriptions to your tasks
 - **Calendar View** - Visual calendar showing tasks by due date
-- **Responsive Design** - Works on desktop, tablet, and mobile
+- **User Authentication** - Secure login/register with JWT tokens
+- **Dark/Light Theme** - Toggle between dark and light modes
+- **Responsive Design** - Works on desktop, tablet, and mobile with hamburger menu
+- **Animated UI** - Smooth page transitions and micro-interactions with Framer Motion
+- **Smooth Scroll** - Butter-smooth scrolling experience with Lenis
 - **Chat Persistence** - Your conversation history is saved locally
 - **Undo Support** - Made a mistake? Just type "undo"
 
@@ -20,10 +26,11 @@ A modern task management application with a **natural language chat interface**.
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 19, Vite, Tailwind CSS, Lucide Icons |
-| Backend | Express 5, Prisma ORM, MySQL |
+| Frontend | React 19, Vite, Tailwind CSS 4, Framer Motion, Lucide Icons |
+| Backend | Express 5, Prisma ORM, MySQL, JWT Authentication |
 | NLP Engine | Custom `command-task-core` module |
 | Database | MySQL 8.0 (Docker) |
+| Smooth Scroll | Lenis |
 
 ## Getting Started
 
@@ -152,15 +159,27 @@ roll a dice             # Random number
 projeto-task-manager/
 ├── frontend/           # React + Vite frontend
 │   ├── src/
-│   │   ├── components/ # UI components
+│   │   ├── components/
+│   │   │   ├── auth/       # Login, Register, ProtectedRoute
+│   │   │   ├── landing/    # Landing page sections
+│   │   │   ├── features/   # Features page
+│   │   │   ├── pricing/    # Pricing page  
+│   │   │   ├── about/      # About page
+│   │   │   ├── calendar/   # Calendar components
+│   │   │   ├── chat/       # Chat interface
+│   │   │   ├── task/       # Task components
+│   │   │   └── ui/         # Shared UI components
+│   │   ├── contexts/   # Auth context
 │   │   ├── hooks/      # Custom React hooks
-│   │   └── lib/        # Utilities
+│   │   └── lib/        # Utilities, animations, theme
 │   └── Dockerfile
 ├── backend/            # Express API server
 │   ├── src/
 │   │   ├── controllers/
 │   │   ├── services/
 │   │   ├── repositories/
+│   │   ├── guards/     # Auth guards
+│   │   ├── middleware/ # JWT middleware
 │   │   └── executor/   # Command handlers
 │   ├── prisma/         # Database schema
 │   └── Dockerfile
@@ -207,8 +226,10 @@ Supported date formats:
 
 ## License
 
-MIT License - feel free to use this project for learning or building your own task manager!
+MIT License - This project is for **educational and personal learning purposes only**. 
+
+The "TaskFlow" brand, pricing tiers, and Pro features are fictional and part of the demo experience. Feel free to use this project as a reference for learning React, Express, Prisma, or building your own applications.
 
 ---
 
-Made with care by [Telmo](https://github.com/Telmo1337)
+Made with ❤️ for learning by [Telmo](https://github.com/Telmo1337)
