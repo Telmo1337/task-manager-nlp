@@ -6,14 +6,16 @@
 
 ## Como usar (protocolo por sessão)
 
+**Branch de trabalho:** todo o trabalho desta lista vai para a branch **`development`**; o `master` fica estável. Cada item termina com commit + push em `development`. Integração para `master` faz-se por PR quando quiseres.
+
 **No início de cada nova sessão, cola este prompt:**
 
-> "Lê o `IMPROVEMENTS_TODO.md`. Encontra o **primeiro item `[ ]` não concluído** e executa **apenas esse**. No fim: corre os comandos da secção *Validar*, marca o item como `[x]`, e faz commit. Não avances para o item seguinte."
+> "Trabalha na branch `development` (`git checkout development && git pull`). Lê o `IMPROVEMENTS_TODO.md`, encontra o **primeiro item `[ ]` não concluído** e executa **apenas esse**. No fim: corre os comandos da secção *Validar*, marca o item como `[x]`, faz commit e push para `development`. Não avances para o item seguinte."
 
 **Regras (anti-alucinação) — respeitar sempre:**
 1. **Um item por sessão.** Nunca encadear itens. Se sobrar tempo, pára.
 2. **Validar a sério.** Correr mesmo os comandos da secção *Validar* e ler o output; não declarar sucesso sem ver verde.
-3. **Terminar verde + commit.** Cada sessão acaba com build/testes a passar e um commit. O próximo arranque parte de estado limpo e conhecido.
+3. **Terminar verde + commit + push.** Cada sessão acaba com build/testes a passar e um commit+push em `development`. O próximo arranque parte de estado limpo e conhecido.
 4. **Não alargar o âmbito.** Tocar só nos ficheiros listados. Se descobrires trabalho extra, **anota-o** num novo item no fim deste ficheiro em vez de o fazeres agora.
 5. **Em caso de dúvida de design, pergunta** antes de inventar (sobretudo Step 3.1).
 
