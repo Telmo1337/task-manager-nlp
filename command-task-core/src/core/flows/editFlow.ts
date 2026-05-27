@@ -4,6 +4,8 @@ import { resetState } from "../state/stateManager";
 import { ConversationState } from "../state/types";
 import { CoreResult, Intent } from "../types";
 
+type EditState = Extract<ConversationState, { kind: "EDIT" }>;
+
 function finalResult(
   intent: Intent,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,10 +42,10 @@ function extractNewTitle(text: string): string | null {
 
 export function handleEditFlow(
   input: string,
-  state: ConversationState,
+  state: EditState,
 ): { result: CoreResult; state: ConversationState } {
   const normalized = input.trim().toLowerCase();
-  const taskId = state.awaitingEditChanges!.taskId;
+  const taskId = state.taskId;
 
   if (normalized === "cancel") {
     return {
@@ -58,7 +60,7 @@ export function handleEditFlow(
         type: "QUESTION",
         message: "What description would you like to add?",
       },
-      state: { ...state, awaitingDescription: true },
+      state: { ...state, editSubState: "AWAITING_DESCRIPTION" },
     };
   }
 
@@ -68,7 +70,7 @@ export function handleEditFlow(
         type: "QUESTION",
         message: "What time would you like to set? (e.g., 5pm, 14:30)",
       },
-      state: { ...state, awaitingTime: true },
+      state: { ...state, editSubState: "AWAITING_TIME" },
     };
   }
 
@@ -78,7 +80,7 @@ export function handleEditFlow(
         type: "QUESTION",
         message: "What date would you like to set? (e.g., tomorrow, next monday, feb 10)",
       },
-      state: { ...state, awaitingDate: true },
+      state: { ...state, editSubState: "AWAITING_DATE" },
     };
   }
 
@@ -88,7 +90,7 @@ export function handleEditFlow(
         type: "QUESTION",
         message: "What would you like to rename it to?",
       },
-      state: { ...state, awaitingTitle: true },
+      state: { ...state, editSubState: "AWAITING_TITLE" },
     };
   }
 
@@ -98,18 +100,18 @@ export function handleEditFlow(
         type: "QUESTION",
         message: "What priority? (high, medium, or low)",
       },
-      state: { ...state, awaitingPriority: true },
+      state: { ...state, editSubState: "AWAITING_PRIORITY" },
     };
   }
 
-  if (state.awaitingDescription) {
+  if (state.editSubState === "AWAITING_DESCRIPTION") {
     return {
       result: finalResult("EDIT_TASK", { id: taskId, description: input.trim() }),
       state: resetState(),
     };
   }
 
-  if (state.awaitingTime) {
+  if (state.editSubState === "AWAITING_TIME") {
     const { ctx } = runPipeline(input);
     if (ctx.slots.time?.length) {
       return {
@@ -126,7 +128,7 @@ export function handleEditFlow(
     };
   }
 
-  if (state.awaitingDate) {
+  if (state.editSubState === "AWAITING_DATE") {
     const { ctx } = runPipeline(input);
     if (ctx.slots.date?.length) {
       return {
@@ -143,14 +145,14 @@ export function handleEditFlow(
     };
   }
 
-  if (state.awaitingTitle) {
+  if (state.editSubState === "AWAITING_TITLE") {
     return {
       result: finalResult("EDIT_TASK", { id: taskId, title: input.trim() }),
       state: resetState(),
     };
   }
 
-  if (state.awaitingPriority) {
+  if (state.editSubState === "AWAITING_PRIORITY") {
     const { ctx } = runPipeline(input);
     if (ctx.slots.priority?.length) {
       return {

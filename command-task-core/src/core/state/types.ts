@@ -1,57 +1,27 @@
 import { Intent } from "../types";
 
+export type TaskCandidate = { id: number; title: string; dueAt: string };
 
-export interface ConversationState {
-  activeIntent?: Intent;
-  awaitingSlot?: string;
+export type EditSubState =
+  | "AWAITING_CHANGES"
+  | "AWAITING_DESCRIPTION"
+  | "AWAITING_TIME"
+  | "AWAITING_DATE"
+  | "AWAITING_TITLE"
+  | "AWAITING_PRIORITY";
 
-  // 🆕 slot opcional (ex: time)
-  awaitingOptionalSlot?: "time";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Slots = Record<string, any[]>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PendingCommand = { intent: Intent; payload: Record<string, any> };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  slots: Record<string, any[]>;
+export type ConversationState =
+  | { kind: "IDLE"; slots: Slots }
+  | { kind: "AWAITING_SLOT"; activeIntent: Intent; awaitingSlot: string; slots: Slots }
+  | { kind: "AWAITING_OPTIONAL_TIME"; pendingCommand: PendingCommand; slots: Slots }
+  | { kind: "PENDING_DELETE"; candidates: TaskCandidate[]; slots: Slots }
+  | { kind: "PENDING_COMMAND"; pendingCommand: PendingCommand; slots: Slots }
+  | { kind: "PENDING_DELETE_ALL"; slots: Slots }
+  | { kind: "EDIT"; taskId: number; editSubState: EditSubState; slots: Slots };
 
-  pendingCommand?: {
-    intent: Intent;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    payload: Record<string, any>;
-  };
-
-  // DELETE ambíguo
-  pendingDelete?: {
-    candidates: {
-      id: number;
-      title: string;
-      dueAt: string;
-    }[];
-  };
-
-  // EDIT ambíguo
-  pendingEdit?: {
-    candidates: {
-      id: number;
-      title: string;
-      dueAt: string;
-    }[];
-    targetId?: number;
-  };
-
-  // EDIT - awaiting changes (we have the task ID, waiting for what to change)
-  awaitingEditChanges?: {
-    taskId: number;
-  };
-
-  // EDIT - awaiting specific field values
-  awaitingDescription?: boolean;
-  awaitingTime?: boolean;
-  awaitingDate?: boolean;
-  awaitingTitle?: boolean;
-  awaitingPriority?: boolean;
-
-  // DELETE ALL confirmation
-  awaitingDeleteAllConfirmation?: boolean;
-}
-
-export const initialState: ConversationState = {
-  slots: {},
-};
+export const initialState: ConversationState = { kind: "IDLE", slots: {} };

@@ -37,12 +37,12 @@ export function interpret(
   /* =========================================
      ⏱️ SLOT OPCIONAL — TIME
      ========================================= */
-  if (state.awaitingOptionalSlot === "time") {
+  if (state.kind === "AWAITING_OPTIONAL_TIME") {
     if (normalized === "no" || normalized === "skip") {
       return {
         result: finalResult(
-          state.pendingCommand!.intent,
-          state.pendingCommand!.payload
+          state.pendingCommand.intent,
+          state.pendingCommand.payload
         ),
         state: resetState(),
       };
@@ -61,8 +61,8 @@ export function interpret(
     }
 
     return {
-      result: finalResult(state.pendingCommand!.intent, {
-        ...state.pendingCommand!.payload,
+      result: finalResult(state.pendingCommand.intent, {
+        ...state.pendingCommand.payload,
         time: ctx.slots.time[0],
       }),
       state: resetState(),
@@ -72,7 +72,7 @@ export function interpret(
   /* =========================================
      🗑️ DELETE ALL CONFIRMATION
      ========================================= */
-  if (state.awaitingDeleteAllConfirmation) {
+  if (state.kind === "PENDING_DELETE_ALL") {
     if (normalized === "yes" || normalized === "y") {
       return {
         result: finalResult("DELETE_ALL_TASKS", {}),
@@ -99,17 +99,17 @@ export function interpret(
   /* =========================================
      ✏️ EDIT - AWAITING CHANGES
      ========================================= */
-  if (state.awaitingEditChanges) {
+  if (state.kind === "EDIT") {
     return handleEditFlow(input, state);
   }
 
   /* =========================================
      🧠 DELETE AMBÍGUO
      ========================================= */
-  if (state.pendingDelete) {
+  if (state.kind === "PENDING_DELETE") {
     const id = Number(normalized.replace("#", ""));
     if (!Number.isNaN(id)) {
-      const match = state.pendingDelete.candidates.find(t => t.id === id);
+      const match = state.candidates.find(t => t.id === id);
       if (match) {
         return {
           result: finalResult("DELETE_TASK", { id }),
@@ -119,7 +119,7 @@ export function interpret(
     }
 
     if (/earliest|first/.test(normalized)) {
-      const task = [...state.pendingDelete.candidates].sort(
+      const task = [...state.candidates].sort(
         (a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime(),
       )[0];
 
@@ -130,7 +130,7 @@ export function interpret(
     }
 
     if (/last|latest/.test(normalized)) {
-      const task = [...state.pendingDelete.candidates].sort(
+      const task = [...state.candidates].sort(
         (a, b) => new Date(b.dueAt).getTime() - new Date(a.dueAt).getTime(),
       )[0];
 
@@ -152,7 +152,7 @@ export function interpret(
   /* =========================================
      ✅ CONFIRMAÇÃO DE COMANDO
      ========================================= */
-  if (state.pendingCommand) {
+  if (state.kind === "PENDING_COMMAND") {
     if (normalized === "yes") {
       return {
         result: finalResult(
@@ -182,7 +182,7 @@ export function interpret(
   /* =========================================
      ⏳ À ESPERA DE SLOT
      ========================================= */
-  if (state.activeIntent && state.awaitingSlot) {
+  if (state.kind === "AWAITING_SLOT") {
     if (normalized === "cancel") {
       return {
         result: { type: "INFO", message: "Action cancelled." },
@@ -192,19 +192,16 @@ export function interpret(
 
     const { ctx } = runPipeline(input);
 
-    const updatedState: ConversationState = {
-      ...state,
-      slots: {
-        ...state.slots,
-        ...(ctx.slots[state.awaitingSlot]
-          ? { [state.awaitingSlot]: ctx.slots[state.awaitingSlot] }
-          : {}),
-      },
+    const updatedSlots = {
+      ...state.slots,
+      ...(ctx.slots[state.awaitingSlot]
+        ? { [state.awaitingSlot]: ctx.slots[state.awaitingSlot] }
+        : {}),
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mergedSlots: Record<string, any[]> = {
-      ...updatedState.slots,
+      ...updatedSlots,
       ...ctx.slots,
     };
 
@@ -221,8 +218,10 @@ export function interpret(
           message: `Please provide ${missing}.`,
         },
         state: {
-          ...updatedState,
+          kind: "AWAITING_SLOT",
+          activeIntent: state.activeIntent,
           awaitingSlot: missing,
+          slots: updatedSlots,
         },
       };
     }
@@ -268,10 +267,7 @@ export function interpret(
         type: "QUESTION",
         message: "Are you sure you want to delete ALL tasks? This cannot be undone. (yes/no)",
       },
-      state: {
-        ...state,
-        awaitingDeleteAllConfirmation: true,
-      },
+      state: { kind: "PENDING_DELETE_ALL", slots: {} },
     };
   }
   const required = REQUIRED_SLOTS[intent];
@@ -287,13 +283,7 @@ export function interpret(
         type: "QUESTION",
         message: `Please provide ${missing}.`,
       },
-      state: awaitSlot(
-        {
-          activeIntent: intent,
-          slots,
-        },
-        missing,
-      ),
+      state: awaitSlot(intent, slots, missing),
     };
   }
 
@@ -308,7 +298,7 @@ export function interpret(
     const hasTime = slots.time?.length;
     const hasPriority = slots.priority?.length;
     const hasDescription = slots.description?.length;
-    
+
     if (hasTitle || hasDate || hasTime || hasPriority || hasDescription) {
       // User provided changes inline, execute directly
       return {
@@ -316,7 +306,7 @@ export function interpret(
         state: resetState(),
       };
     }
-    
+
     // No changes provided, ask what to change
     return {
       result: {
@@ -324,10 +314,10 @@ export function interpret(
         message: "What would you like to change? (new title, date, time, priority, or description)",
       },
       state: {
-        ...state,
-        awaitingEditChanges: {
-          taskId: Number(slots.id[0]),
-        },
+        kind: "EDIT",
+        taskId: Number(slots.id[0]),
+        editSubState: "AWAITING_CHANGES",
+        slots: {},
       },
     };
   }

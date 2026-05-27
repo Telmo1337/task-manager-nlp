@@ -23,8 +23,11 @@ describe("interpret() — single-turn / fresh input", () => {
       if (result.type === "QUESTION") {
         expect(result.message).toMatch(/date/i);
       }
-      expect(state.activeIntent).toBe("CREATE_TASK");
-      expect(state.awaitingSlot).toBe("date");
+      expect(state.kind).toBe("AWAITING_SLOT");
+      if (state.kind === "AWAITING_SLOT") {
+        expect(state.activeIntent).toBe("CREATE_TASK");
+        expect(state.awaitingSlot).toBe("date");
+      }
     });
 
     it("asks for time when title and date are present but time is missing", () => {
@@ -33,8 +36,11 @@ describe("interpret() — single-turn / fresh input", () => {
       if (result.type === "QUESTION") {
         expect(result.message).toMatch(/time/i);
       }
-      expect(state.activeIntent).toBe("CREATE_TASK");
-      expect(state.awaitingSlot).toBe("time");
+      expect(state.kind).toBe("AWAITING_SLOT");
+      if (state.kind === "AWAITING_SLOT") {
+        expect(state.activeIntent).toBe("CREATE_TASK");
+        expect(state.awaitingSlot).toBe("time");
+      }
     });
   });
 
@@ -74,7 +80,7 @@ describe("interpret() — single-turn / fresh input", () => {
       if (result.type === "QUESTION") {
         expect(result.message).toMatch(/yes/i);
       }
-      expect(state.awaitingDeleteAllConfirmation).toBe(true);
+      expect(state.kind).toBe("PENDING_DELETE_ALL");
     });
   });
 
@@ -88,7 +94,10 @@ describe("interpret() — single-turn / fresh input", () => {
       if (result.type === "QUESTION") {
         expect(result.message).toMatch(/change/i);
       }
-      expect(state.awaitingEditChanges?.taskId).toBe(22);
+      expect(state.kind).toBe("EDIT");
+      if (state.kind === "EDIT") {
+        expect(state.taskId).toBe(22);
+      }
     });
 
     it("returns FINAL EDIT_TASK when id and date are provided inline", () => {
@@ -189,13 +198,19 @@ describe("interpret() — multi-turn / state machine", () => {
     it("fills slots across three turns and returns FINAL CREATE_TASK", () => {
       const t1 = interpret("add buy milk", initialState);
       expect(t1.result.type).toBe("QUESTION");
-      expect(t1.state.activeIntent).toBe("CREATE_TASK");
-      expect(t1.state.awaitingSlot).toBe("date");
+      expect(t1.state.kind).toBe("AWAITING_SLOT");
+      if (t1.state.kind === "AWAITING_SLOT") {
+        expect(t1.state.activeIntent).toBe("CREATE_TASK");
+        expect(t1.state.awaitingSlot).toBe("date");
+      }
 
       const t2 = interpret("tomorrow", t1.state);
       expect(t2.result.type).toBe("QUESTION");
-      expect(t2.state.activeIntent).toBe("CREATE_TASK");
-      expect(t2.state.awaitingSlot).toBe("time");
+      expect(t2.state.kind).toBe("AWAITING_SLOT");
+      if (t2.state.kind === "AWAITING_SLOT") {
+        expect(t2.state.activeIntent).toBe("CREATE_TASK");
+        expect(t2.state.awaitingSlot).toBe("time");
+      }
 
       const t3 = interpret("3pm", t2.state);
       expect(t3.result.type).toBe("FINAL");
@@ -211,8 +226,7 @@ describe("interpret() — multi-turn / state machine", () => {
       const t1 = interpret("add buy milk", initialState);
       const t2 = interpret("cancel", t1.state);
       expect(t2.result.type).toBe("INFO");
-      expect(t2.state.activeIntent).toBeUndefined();
-      expect(t2.state.awaitingSlot).toBeUndefined();
+      expect(t2.state.kind).toBe("IDLE");
     });
   });
 
@@ -220,7 +234,7 @@ describe("interpret() — multi-turn / state machine", () => {
     it("executes DELETE_ALL when user confirms with 'yes'", () => {
       const t1 = interpret("delete all tasks", initialState);
       expect(t1.result.type).toBe("QUESTION");
-      expect(t1.state.awaitingDeleteAllConfirmation).toBe(true);
+      expect(t1.state.kind).toBe("PENDING_DELETE_ALL");
 
       const t2 = interpret("yes", t1.state);
       expect(t2.result.type).toBe("FINAL");
@@ -233,14 +247,14 @@ describe("interpret() — multi-turn / state machine", () => {
       const t1 = interpret("delete all tasks", initialState);
       const t2 = interpret("no", t1.state);
       expect(t2.result.type).toBe("INFO");
-      expect(t2.state.awaitingDeleteAllConfirmation).toBeUndefined();
+      expect(t2.state.kind).toBe("IDLE");
     });
 
     it("re-asks when response is neither yes nor no", () => {
       const t1 = interpret("delete all tasks", initialState);
       const t2 = interpret("maybe", t1.state);
       expect(t2.result.type).toBe("QUESTION");
-      expect(t2.state.awaitingDeleteAllConfirmation).toBe(true);
+      expect(t2.state.kind).toBe("PENDING_DELETE_ALL");
     });
   });
 
@@ -248,11 +262,17 @@ describe("interpret() — multi-turn / state machine", () => {
     it("date field: edit → 'date' → provide date → FINAL EDIT_TASK", () => {
       const t1 = interpret("edit #22", initialState);
       expect(t1.result.type).toBe("QUESTION");
-      expect(t1.state.awaitingEditChanges?.taskId).toBe(22);
+      expect(t1.state.kind).toBe("EDIT");
+      if (t1.state.kind === "EDIT") {
+        expect(t1.state.taskId).toBe(22);
+      }
 
       const t2 = interpret("date", t1.state);
       expect(t2.result.type).toBe("QUESTION");
-      expect(t2.state.awaitingDate).toBe(true);
+      expect(t2.state.kind).toBe("EDIT");
+      if (t2.state.kind === "EDIT") {
+        expect(t2.state.editSubState).toBe("AWAITING_DATE");
+      }
 
       const t3 = interpret("tomorrow", t2.state);
       expect(t3.result.type).toBe("FINAL");
@@ -267,7 +287,10 @@ describe("interpret() — multi-turn / state machine", () => {
       const t1 = interpret("edit #22", initialState);
       const t2 = interpret("time", t1.state);
       expect(t2.result.type).toBe("QUESTION");
-      expect(t2.state.awaitingTime).toBe(true);
+      expect(t2.state.kind).toBe("EDIT");
+      if (t2.state.kind === "EDIT") {
+        expect(t2.state.editSubState).toBe("AWAITING_TIME");
+      }
 
       const t3 = interpret("5pm", t2.state);
       expect(t3.result.type).toBe("FINAL");
@@ -282,7 +305,10 @@ describe("interpret() — multi-turn / state machine", () => {
       const t1 = interpret("edit #22", initialState);
       const t2 = interpret("title", t1.state);
       expect(t2.result.type).toBe("QUESTION");
-      expect(t2.state.awaitingTitle).toBe(true);
+      expect(t2.state.kind).toBe("EDIT");
+      if (t2.state.kind === "EDIT") {
+        expect(t2.state.editSubState).toBe("AWAITING_TITLE");
+      }
 
       const t3 = interpret("New Task Name", t2.state);
       expect(t3.result.type).toBe("FINAL");
@@ -297,7 +323,10 @@ describe("interpret() — multi-turn / state machine", () => {
       const t1 = interpret("edit #22", initialState);
       const t2 = interpret("priority", t1.state);
       expect(t2.result.type).toBe("QUESTION");
-      expect(t2.state.awaitingPriority).toBe(true);
+      expect(t2.state.kind).toBe("EDIT");
+      if (t2.state.kind === "EDIT") {
+        expect(t2.state.editSubState).toBe("AWAITING_PRIORITY");
+      }
 
       const t3 = interpret("high", t2.state);
       expect(t3.result.type).toBe("FINAL");
@@ -312,19 +341,18 @@ describe("interpret() — multi-turn / state machine", () => {
       const t1 = interpret("edit #22", initialState);
       const t2 = interpret("cancel", t1.state);
       expect(t2.result.type).toBe("INFO");
-      expect(t2.state.awaitingEditChanges).toBeUndefined();
+      expect(t2.state.kind).toBe("IDLE");
     });
   });
 
   describe("DELETE_TASK — disambiguation", () => {
     const pendingDeleteState: ConversationState = {
-      ...initialState,
-      pendingDelete: {
-        candidates: [
-          { id: 3, title: "Meeting", dueAt: "2025-01-15T10:00:00Z" },
-          { id: 7, title: "Meeting", dueAt: "2025-01-20T10:00:00Z" },
-        ],
-      },
+      kind: "PENDING_DELETE",
+      candidates: [
+        { id: 3, title: "Meeting", dueAt: "2025-01-15T10:00:00Z" },
+        { id: 7, title: "Meeting", dueAt: "2025-01-20T10:00:00Z" },
+      ],
+      slots: {},
     };
 
     it("resolves by id when user types the task id", () => {
@@ -357,18 +385,18 @@ describe("interpret() — multi-turn / state machine", () => {
     it("re-asks when response is not an id or earliest/latest", () => {
       const { result, state } = interpret("dunno", pendingDeleteState);
       expect(result.type).toBe("QUESTION");
-      expect(state.pendingDelete).toBeDefined();
+      expect(state.kind).toBe("PENDING_DELETE");
     });
   });
 
   describe("optional time slot", () => {
     const awaitingTimeState: ConversationState = {
-      ...initialState,
-      awaitingOptionalSlot: "time",
+      kind: "AWAITING_OPTIONAL_TIME",
       pendingCommand: {
         intent: "CREATE_TASK",
         payload: { title: "buy milk", date: "tomorrow" },
       },
+      slots: {},
     };
 
     it("skips time and returns FINAL on 'no'", () => {

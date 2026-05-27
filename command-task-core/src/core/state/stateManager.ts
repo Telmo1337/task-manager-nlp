@@ -1,54 +1,20 @@
 import { ConversationState } from "./types";
-
 import { Intent } from "../types";
 
-/* ======================================================
-   RESET TOTAL DO ESTADO
-   ====================================================== */
 export function resetState(): ConversationState {
-  return {
-    slots: {}
-  };
+  return { kind: "IDLE", slots: {} };
 }
 
-/* ======================================================
-   INICIAR UMA INTENÇÃO
-   ====================================================== */
-export function startIntent(intent: Intent): ConversationState {
-  return {
-    activeIntent: intent,
-    slots: {}
-  };
-}
-
-/* ======================================================
-   MARCAR QUE ESTAMOS À ESPERA DE UM SLOT
-   ====================================================== */
 export function awaitSlot(
-  state: ConversationState,
-  slot: string
-): ConversationState {
-  return {
-    ...state,
-    awaitingSlot: slot
-  };
-}
-
-/* ======================================================
-   PREENCHER SLOT E LIMPAR awaitingSlot
-   ====================================================== */
-export function fillSlot(
-  state: ConversationState,
-  slot: string,
+  activeIntent: Intent,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any
+  slots: Record<string, any[]>,
+  slot: string,
 ): ConversationState {
   return {
-    ...state,
-    awaitingSlot: undefined, // ✅ nunca null
-    slots: {
-      ...state.slots,
-      [slot]: [value]
-    }
+    kind: "AWAITING_SLOT",
+    activeIntent,
+    awaitingSlot: slot,
+    slots,
   };
 }

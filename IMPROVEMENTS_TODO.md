@@ -110,7 +110,7 @@
 - **Pronto quando:** `index.ts` mais curto; testes verdes.
 - **Validar:** `cd command-task-core && npm test`
 
-### [ ] Step 2.3 — `ConversationState` como discriminated union
+### [x] Step 2.3 — `ConversationState` como discriminated union
 - **Objetivo:** eliminar as flags booleanas soltas que podem entrar em conflito.
 - **Ficheiros:** `command-task-core/src/core/state/types.ts`, `state/stateManager.ts`, `index.ts`, `flows/editFlow.ts`.
 - **Fazer:** substituir os vários `awaiting*: boolean` por um campo discriminado (`kind: "IDLE" | "AWAITING_SLOT" | "EDIT" | "PENDING_CONFIRMATION" | ...`) com os dados de cada estado. Migrar leituras/escritas. Ajustar testes que dependam da forma antiga do `state` (só a forma, não o comportamento observável).

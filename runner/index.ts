@@ -102,10 +102,9 @@ async function executeCommand(command: Command) {
         // 🔴 ESTE É O PONTO CRÍTICO
         // Guardar candidatos no estado para o Core resolver no próximo input
         state = {
-          ...state,
-          pendingDelete: {
-            candidates: data.candidates,
-          },
+          kind: "PENDING_DELETE",
+          candidates: data.candidates,
+          slots: {},
         };
 
         console.log("Choose a task by ID:");
