@@ -27,7 +27,7 @@
 
 ## Fase 0 — Rede de segurança (fazer primeiro; protege tudo o resto)
 
-### [ ] Step 0.0 — Baseline verde
+### [x] Step 0.0 — Baseline verde
 - **Objetivo:** confirmar o ponto de partida antes de mexer em nada.
 - **Ficheiros:** nenhum (só correr comandos).
 - **Fazer:** `npm run install:all`; `npm run build`; correr os testes de cada pacote. Registar no fim deste ficheiro (secção *Notas*) que testes passam/falham hoje.
@@ -281,6 +281,19 @@
 
 ## Notas (preencher ao longo do caminho)
 
-- Estado do baseline (Step 0.0): _por preencher_
+- **Estado do baseline (Step 0.0)** — registado 2026-05-27 (branch `development`):
+  - **`npm run install:all`**: OK para root/backend/frontend. ⚠️ não instala `command-task-core` (nem `shared`/`runner`). O `node_modules` pré-existente do core estava partido (shim do jest sem bit de execução → `jest: Permission denied`); resolvido localmente com `npm ci` no `command-task-core`.
+  - **`npm run build`**: ❌ FALHA (em `cd backend && tsc`):
+    - TS6305 ×3 — o backend referencia `command-task-core` como projeto `composite`, mas `command-task-core/dist` não existe e não há script de build que o gere (o `npm run build` nunca o constrói). O `shared/dist` está commitado, por isso resolve; o do core não.
+    - TS2366 ×1 em `src/executor/mapCoreResultToCommandResult.ts:6` (a função pode devolver `undefined`) — provavelmente cascata da resolução partida dos tipos do core.
+  - **`cd command-task-core && npm test`**: ✅ VERDE — 4 suites / 55 testes (intent/detector, slots/title, slots/time, slots/date).
+  - **`cd backend && npm test`**: ❌ FALHA — 2 suites / 4 testes. Duas causas:
+    - `backend/dist/` obsoleto é apanhado pelo jest (mock manual duplicado no haste-map `dist/.../task.repository.js`; corre o compilado `dist/services/task.service.spec.js`).
+    - O mock manual `src/repositories/__mocks__/task.repository.ts` está dessincronizado com o serviço: falta `findDueOnDate`, que o `task.service.spec.ts` chama (`repository.findDueOnDate.mockResolvedValue` → `undefined`).
+  - **Frontend**: fora do *Validar* do Step 0.0; não corrido.
+  - **Resumo**: core verde; build + testes do backend vermelhos. A cadeia *Validar* (`npm run build && core test && backend test`) está VERMELHA no global (pára no build).
 - Itens novos descobertos (não alargar âmbito — anotar aqui):
-  - _…_
+  - **`command-task-core/node_modules/` está commitado no git** (com shims `.cmd`/`.ps1` de Windows + CRLF) — é a causa real dos bins sem bit de execução no Linux (`jest: Permission denied`). Correr `npm ci` no core regenerou ~170 ficheiros tracked (typechange/exec-bit); **não** foram commitados nesta sessão (só o `IMPROVEMENTS_TODO.md`). Além disso o `install:all` omite `command-task-core` e `shared`. Fix próprio: tirar `node_modules` do VCS + `.gitignore` (alargar o Step 6.1) e incluir o core no `install:all` (Step 0.1).
+  - `command-task-core` não tem script `build` e o `npm run build` nunca gera o seu `dist`, mas o backend referencia-o como `composite` → o build parte logo a vermelho. (Relacionado com Step 6.1/6.2.)
+  - `backend/dist/` obsoleto (e `shared/dist` commitado) poluem o jest via mocks duplicados no haste-map. Considerar ignorar `dist` no jest config / tirar do VCS (Step 6.1).
+  - Mock `task.repository.ts` do backend sem `findDueOnDate` → `task.service.spec.ts` vermelho. Teste partido que precede a Fase 1 (bloqueará o `npm test` da raiz do Step 0.1 até ser corrigido).
