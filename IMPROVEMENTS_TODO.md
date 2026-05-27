@@ -58,7 +58,7 @@
 - **Pronto quando:** `npm run lint` na raiz passa nos 3 pacotes.
 - **Validar:** `npm run lint`
 
-### [ ] Step 0.3 — CI (GitHub Actions)
+### [x] Step 0.3 — CI (GitHub Actions)
 - **Objetivo:** cada push/PR corre install + build + lint + testes.
 - **Ficheiros:** `.github/workflows/ci.yml` (novo).
 - **Fazer:** workflow em Node LTS: `npm run install:all`, `npm run build`, `npm run lint`, `npm test`. Sem deploy.
@@ -306,6 +306,7 @@
   - Triviais (renomeados): catch vars `error→_error`, params `sessionId→_sessionId`, `no-case-declarations` wrapped com `{}`, `no-useless-escape` em `title.ts` corrigido, `startIntent` importação não usada removida.
   - Suprimidos com `eslint-disable-next-line` (Step 4.3 trata-os): todos os `no-explicit-any` em backend e core.
   - Frontend (pre-existente): `react-refresh/only-export-components` em `button.tsx`, `theme.tsx`, `main.tsx` — suprimidos com comentários (arquitetura a tratar noutra altura).
+- **Step 0.3 — CI (GitHub Actions)** (2026-05-27): `.github/workflows/ci.yml` criado com Node LTS, passos: install:all + `npm ci` em command-task-core (para corrigir exec bits dos shims Windows no Linux), build, lint, test. YAML validado com `@action-validator/cli` (exit 0). `npm run lint` e `npm test` passam localmente. `npm run build` continua vermelho (issue pré-existente do Step 0.0, rastreado em Steps 6.1/6.2).
 - Itens novos descobertos (não alargar âmbito — anotar aqui):
   - **`command-task-core/node_modules/` está commitado no git** (com shims `.cmd`/`.ps1` de Windows + CRLF) — é a causa real dos bins sem bit de execução no Linux (`jest: Permission denied`). Correr `npm ci` no core regenerou ~170 ficheiros tracked (typechange/exec-bit); **não** foram commitados nesta sessão (só o `IMPROVEMENTS_TODO.md`). Além disso o `install:all` omite `command-task-core` e `shared`. Fix próprio: tirar `node_modules` do VCS + `.gitignore` (alargar o Step 6.1) e incluir o core no `install:all` (Step 0.1).
   - `command-task-core` não tem script `build` e o `npm run build` nunca gera o seu `dist`, mas o backend referencia-o como `composite` → o build parte logo a vermelho. (Relacionado com Step 6.1/6.2.)
