@@ -71,7 +71,7 @@
 
 > O `interpret()` (`command-task-core/src/core/index.ts`, ~772 linhas) é o coração do produto e não tem testes. Estes são **testes de caracterização**: capturam o comportamento ATUAL para o refactor da Fase 2 ser seguro. Se algo parecer um bug, **não corrigir aqui** — testar como está e anotar.
 
-### [ ] Step 1.1 — Testes de input fresco / single-turn
+### [x] Step 1.1 — Testes de input fresco / single-turn
 - **Objetivo:** cobrir a deteção de intent que devolve QUESTION ou FINAL à primeira.
 - **Ficheiros:** novo `command-task-core/src/core/index.spec.ts`. Ler `index.ts`, `pipeline/runPipeline.ts`, `intent/detector.ts`.
 - **Fazer:** testar `interpret(texto, initialState)` para: criar com tudo ("add buy milk tomorrow at 3pm" → FINAL CREATE_TASK), criar incompleto ("add buy milk" → QUESTION), listar, deteção de delete/edit. Asserções sobre `result.type` e intent/slots.
