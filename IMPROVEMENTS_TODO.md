@@ -147,7 +147,7 @@
 >
 > Se a segurança for prioridade, esta fase pode vir logo a seguir à Fase 0 (queres a rede de testes/lint primeiro).
 
-### [ ] Step 3.1 — Modelo único de tokens (DECISÃO) — resolve #1 e #2
+### [x] Step 3.1 — Modelo único de tokens (DECISÃO) — resolve #1 e #2
 - **Objetivo:** um modelo coerente em vez de dois meios-modelos partidos.
 - **Decisão:**
   - **(A, recomendado)** Refresh token só em cookie **httpOnly** (já está no path `/auth`); access token **em memória** no frontend (não localStorage), enviado via Bearer (o `authMiddleware` fica igual). Parar de devolver tokens no body; pôr `credentials:'include'` nos fetch (#2).

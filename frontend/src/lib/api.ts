@@ -32,21 +32,21 @@ function getAuthHeaders(): Record<string, string> {
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = { ...getAuthHeaders(), ...(options.headers as Record<string, string> || {}) };
   
-  let res = await fetch(url, { ...options, headers });
-  
+  let res = await fetch(url, { ...options, headers, credentials: "include" });
+
   // If unauthorized, try to refresh token and retry
   if (res.status === 401) {
     const refreshed = await refreshAccessToken();
     if (refreshed) {
       const newHeaders = { ...getAuthHeaders(), ...(options.headers as Record<string, string> || {}) };
-      res = await fetch(url, { ...options, headers: newHeaders });
+      res = await fetch(url, { ...options, headers: newHeaders, credentials: "include" });
     } else {
       // Refresh failed, clear tokens
       removeTokens();
       throw new Error("Session expired. Please login again.");
     }
   }
-  
+
   return res;
 }
 

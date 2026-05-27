@@ -6,15 +6,14 @@ import { securityLogService } from "../services/security-log.service";
 
 const authService = new AuthService();
 
-// Cookie configuration
-const COOKIE_OPTIONS = {
+// Cookie configuration — only the refresh token lives in a cookie (httpOnly, path:/auth)
+const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict" as const,
-  path: "/",
+  path: "/auth",
 };
 
-const ACCESS_TOKEN_MAX_AGE = 15 * 60 * 1000; // 15 minutes
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function getClientInfo(req: Request): { ip: string; userAgent: string } {
@@ -52,21 +51,15 @@ function handleError(res: Response, error: unknown): void {
   res.status(500).json({ status: "error", message: "Internal server error" });
 }
 
-function setTokenCookies(res: Response, tokens: { accessToken: string; refreshToken: string }): void {
-  res.cookie("accessToken", tokens.accessToken, {
-    ...COOKIE_OPTIONS,
-    maxAge: ACCESS_TOKEN_MAX_AGE,
-  });
-  res.cookie("refreshToken", tokens.refreshToken, {
-    ...COOKIE_OPTIONS,
+function setRefreshTokenCookie(res: Response, refreshToken: string): void {
+  res.cookie("refreshToken", refreshToken, {
+    ...REFRESH_COOKIE_OPTIONS,
     maxAge: REFRESH_TOKEN_MAX_AGE,
-    path: "/auth", // Restrict refresh token to auth routes only
   });
 }
 
-function clearTokenCookies(res: Response): void {
-  res.clearCookie("accessToken", COOKIE_OPTIONS);
-  res.clearCookie("refreshToken", { ...COOKIE_OPTIONS, path: "/auth" });
+function clearRefreshTokenCookie(res: Response): void {
+  res.clearCookie("refreshToken", REFRESH_COOKIE_OPTIONS);
 }
 
 export async function registerController(req: Request, res: Response): Promise<void> {
@@ -96,13 +89,13 @@ export async function registerController(req: Request, res: Response): Promise<v
       userAgent,
     });
 
-    // Set httpOnly cookies
-    setTokenCookies(res, result.tokens);
+    // Refresh token in httpOnly cookie; access token returned in body for in-memory storage
+    setRefreshTokenCookie(res, result.tokens.refreshToken);
 
     res.status(201).json({
       status: "ok",
       user: result.user,
-      tokens: result.tokens, // Still return tokens for backward compatibility
+      accessToken: result.tokens.accessToken,
     });
   } catch (error) {
     handleError(res, error);
@@ -161,13 +154,13 @@ export async function loginController(req: Request, res: Response): Promise<void
         userAgent,
       });
 
-      // Set httpOnly cookies
-      setTokenCookies(res, result.tokens);
+      // Refresh token in httpOnly cookie; access token returned in body for in-memory storage
+      setRefreshTokenCookie(res, result.tokens.refreshToken);
 
       res.json({
         status: "ok",
         user: result.user,
-        tokens: result.tokens, // Still return tokens for backward compatibility
+        accessToken: result.tokens.accessToken,
       });
     } catch (loginError) {
       // Record failed login attempt
@@ -213,8 +206,8 @@ export async function logoutController(req: AuthenticatedRequest, res: Response)
       userAgent,
     });
 
-    // Clear cookies
-    clearTokenCookies(res);
+    // Clear refresh token cookie
+    clearRefreshTokenCookie(res);
 
     res.json({ status: "ok", message: "Logged out successfully" });
   } catch (error) {
@@ -224,8 +217,7 @@ export async function logoutController(req: AuthenticatedRequest, res: Response)
 
 export async function refreshController(req: Request, res: Response): Promise<void> {
   try {
-    // Try to get refresh token from cookie first, then body
-    const refreshToken = req.cookies?.refreshToken || req.body.refreshToken;
+    const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
       res.status(400).json({ status: "error", message: "Refresh token is required" });
@@ -234,12 +226,12 @@ export async function refreshController(req: Request, res: Response): Promise<vo
 
     const tokens = await authService.refreshTokens(refreshToken);
 
-    // Set new cookies
-    setTokenCookies(res, tokens);
+    // Rotate refresh token cookie; return new access token in body only
+    setRefreshTokenCookie(res, tokens.refreshToken);
 
     res.json({
       status: "ok",
-      tokens,
+      accessToken: tokens.accessToken,
     });
   } catch (error) {
     handleError(res, error);

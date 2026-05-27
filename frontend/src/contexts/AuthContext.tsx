@@ -10,17 +10,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: true,
   });
 
-  // Check for existing session on mount
+  // Check for existing session on mount.
+  // Access tokens are in-memory and lost on reload, so we always try a silent
+  // refresh first (the httpOnly cookie carries the refresh token automatically).
   useEffect(() => {
     async function checkAuth() {
-      const tokens = authApi.getStoredTokens();
-      
-      if (!tokens) {
-        setState({ user: null, isAuthenticated: false, isLoading: false });
-        return;
-      }
-
       try {
+        await authApi.refreshTokens();
         const user = await authApi.getProfile();
         setState({ user, isAuthenticated: true, isLoading: false });
       } catch {

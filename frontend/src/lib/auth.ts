@@ -1,48 +1,38 @@
-import type { AuthUser, AuthTokens, LoginCredentials, RegisterCredentials } from "../types/auth";
+import type { AuthUser, LoginCredentials, RegisterCredentials } from "../types/auth";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-const TOKEN_KEY = "task-manager-access-token";
-const REFRESH_TOKEN_KEY = "task-manager-refresh-token";
+// Access token lives in memory only — never persisted to localStorage.
+// Refresh token lives in an httpOnly cookie managed by the browser.
+let _accessToken: string | null = null;
 
-export function getStoredTokens(): AuthTokens | null {
-  const accessToken = localStorage.getItem(TOKEN_KEY);
-  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-  
-  if (!accessToken || !refreshToken) return null;
-  
-  return { accessToken, refreshToken };
+export function getAccessToken(): string | null {
+  return _accessToken;
 }
 
-export function storeTokens(tokens: AuthTokens): void {
-  localStorage.setItem(TOKEN_KEY, tokens.accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+export function storeAccessToken(accessToken: string): void {
+  _accessToken = accessToken;
 }
 
 export function clearTokens(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  _accessToken = null;
 }
 
-// Aliases for api.ts compatibility
-export function getAccessToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+// Alias used by api.ts
+export const removeTokens = clearTokens;
+
+// Used by AuthContext to detect an active in-memory session.
+// Returns null when the page has been reloaded (token gone) — AuthContext
+// will attempt a silent refresh via the httpOnly cookie instead.
+export function getStoredTokens(): { accessToken: string } | null {
+  return _accessToken ? { accessToken: _accessToken } : null;
 }
 
-export function removeTokens(): void {
-  clearTokens();
-}
-
-export function getAuthHeader(): Record<string, string> {
-  const tokens = getStoredTokens();
-  if (!tokens) return {};
-  return { Authorization: `Bearer ${tokens.accessToken}` };
-}
-
-export async function login(credentials: LoginCredentials): Promise<{ user: AuthUser; tokens: AuthTokens }> {
+export async function login(credentials: LoginCredentials): Promise<{ user: AuthUser }> {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(credentials),
   });
 
@@ -52,14 +42,15 @@ export async function login(credentials: LoginCredentials): Promise<{ user: Auth
     throw new Error(data.message || "Login failed");
   }
 
-  storeTokens(data.tokens);
-  return { user: data.user, tokens: data.tokens };
+  _accessToken = data.accessToken;
+  return { user: data.user };
 }
 
-export async function register(credentials: RegisterCredentials): Promise<{ user: AuthUser; tokens: AuthTokens }> {
+export async function register(credentials: RegisterCredentials): Promise<{ user: AuthUser }> {
   const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(credentials),
   });
 
@@ -69,55 +60,46 @@ export async function register(credentials: RegisterCredentials): Promise<{ user
     throw new Error(data.message || "Registration failed");
   }
 
-  storeTokens(data.tokens);
-  return { user: data.user, tokens: data.tokens };
+  _accessToken = data.accessToken;
+  return { user: data.user };
 }
 
 export async function logout(): Promise<void> {
-  const tokens = getStoredTokens();
-  
-  if (tokens) {
+  if (_accessToken) {
     try {
       await fetch(`${API_URL}/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${tokens.accessToken}`,
+          Authorization: `Bearer ${_accessToken}`,
         },
+        credentials: "include",
       });
     } catch {
-      // Ignore logout errors, we'll clear tokens anyway
+      // Ignore logout errors — tokens are cleared locally regardless
     }
   }
-  
-  clearTokens();
+  _accessToken = null;
 }
 
-export async function refreshTokens(): Promise<AuthTokens> {
-  const tokens = getStoredTokens();
-  
-  if (!tokens) {
-    throw new Error("No refresh token available");
-  }
-
+export async function refreshTokens(): Promise<{ accessToken: string }> {
   const res = await fetch(`${API_URL}/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken: tokens.refreshToken }),
+    credentials: "include",
   });
 
   const data = await res.json();
 
   if (!res.ok) {
-    clearTokens();
+    _accessToken = null;
     throw new Error(data.message || "Token refresh failed");
   }
 
-  storeTokens(data.tokens);
-  return data.tokens;
+  _accessToken = data.accessToken;
+  return { accessToken: data.accessToken };
 }
 
-// Alias for api.ts - returns boolean indicating success
 export async function refreshAccessToken(): Promise<boolean> {
   try {
     await refreshTokens();
@@ -128,25 +110,21 @@ export async function refreshAccessToken(): Promise<boolean> {
 }
 
 export async function getProfile(): Promise<AuthUser> {
-  const tokens = getStoredTokens();
-  
-  if (!tokens) {
+  if (!_accessToken) {
     throw new Error("Not authenticated");
   }
 
   const res = await fetch(`${API_URL}/auth/profile`, {
-    headers: {
-      Authorization: `Bearer ${tokens.accessToken}`,
-    },
+    headers: { Authorization: `Bearer ${_accessToken}` },
+    credentials: "include",
   });
 
   if (res.status === 401) {
-    // Try to refresh tokens
     try {
       await refreshTokens();
       return getProfile();
     } catch {
-      clearTokens();
+      _accessToken = null;
       throw new Error("Session expired");
     }
   }
