@@ -85,7 +85,7 @@
 - **Pronto quando:** cada fluxo multi-turno tem ≥1 teste ponta-a-ponta verde.
 - **Validar:** `cd command-task-core && npm test`
 
-### [ ] Step 1.3 — Testes do chit-chat e dos extractors em falta
+### [x] Step 1.3 — Testes do chit-chat e dos extractors em falta
 - **Objetivo:** fechar as lacunas de cobertura antes do refactor.
 - **Ficheiros:** novos specs para `slots/priority.ts`, `slots/description.ts`, `slots/recurrence.ts`; casos para `getConversationalResponse()` (em `index.ts`).
 - **Fazer:** ≥2 casos por extractor; para o chit-chat, cobrir as famílias principais (identidade, ajuda, saudação, agradecimento, piada). Para respostas aleatórias (piadas), testar que devolve algo do conjunto esperado.

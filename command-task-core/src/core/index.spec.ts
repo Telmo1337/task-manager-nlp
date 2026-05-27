@@ -130,6 +130,57 @@ describe("interpret() — single-turn / fresh input", () => {
       const { result } = interpret("thanks", initialState);
       expect(result.type).toBe("INFO");
     });
+
+    it("identity — returns INFO with assistant description for 'who are you'", () => {
+      const { result } = interpret("who are you", initialState);
+      expect(result.type).toBe("INFO");
+      if (result.type === "INFO") {
+        expect(result.message).toMatch(/task manager/i);
+      }
+    });
+
+    it("identity — returns INFO with name for 'what is your name'", () => {
+      const { result } = interpret("what is your name", initialState);
+      expect(result.type).toBe("INFO");
+      if (result.type === "INFO") {
+        expect(result.message).toMatch(/task manager/i);
+      }
+    });
+
+    it("help — returns INFO with command examples for 'help'", () => {
+      const { result } = interpret("help", initialState);
+      expect(result.type).toBe("INFO");
+      if (result.type === "INFO") {
+        expect(result.message).toMatch(/create|show|list/i);
+      }
+    });
+
+    it("help — returns INFO with capabilities for 'what can you do'", () => {
+      const { result } = interpret("what can you do", initialState);
+      expect(result.type).toBe("INFO");
+      if (result.type === "INFO") {
+        expect(result.message).toMatch(/create|tasks/i);
+      }
+    });
+
+    it("joke — returns INFO with a message from the jokes set", () => {
+      const knownJokes = [
+        "Why did the task go to therapy? It had too many issues to resolve! 😄",
+        "I tried to organize a hide and seek tournament, but it was a disaster. Good players are hard to find!",
+        "Why do programmers prefer dark mode? Because light attracts bugs! 🐛",
+        "What do you call a task that's been waiting forever? Pro-crastinated! ⏰",
+      ];
+      const { result } = interpret("tell me a joke", initialState);
+      expect(result.type).toBe("INFO");
+      if (result.type === "INFO") {
+        expect(knownJokes).toContain(result.message);
+      }
+    });
+
+    it("goodbye — returns INFO for 'bye'", () => {
+      const { result } = interpret("bye", initialState);
+      expect(result.type).toBe("INFO");
+    });
   });
 });
 
