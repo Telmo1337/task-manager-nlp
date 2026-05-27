@@ -1,5 +1,5 @@
 import { interpret } from "./index";
-import { initialState } from "./state/types";
+import { ConversationState, initialState } from "./state/types";
 
 // Characterization tests: capture current behaviour of interpret() so the
 // Phase 2 refactor can run safely. Do NOT fix bugs here — test as-is.
@@ -129,6 +129,224 @@ describe("interpret() — single-turn / fresh input", () => {
     it("returns INFO for a thanks", () => {
       const { result } = interpret("thanks", initialState);
       expect(result.type).toBe("INFO");
+    });
+  });
+});
+
+describe("interpret() — multi-turn / state machine", () => {
+  describe("CREATE_TASK slot-filling (title → date → time)", () => {
+    it("fills slots across three turns and returns FINAL CREATE_TASK", () => {
+      const t1 = interpret("add buy milk", initialState);
+      expect(t1.result.type).toBe("QUESTION");
+      expect(t1.state.activeIntent).toBe("CREATE_TASK");
+      expect(t1.state.awaitingSlot).toBe("date");
+
+      const t2 = interpret("tomorrow", t1.state);
+      expect(t2.result.type).toBe("QUESTION");
+      expect(t2.state.activeIntent).toBe("CREATE_TASK");
+      expect(t2.state.awaitingSlot).toBe("time");
+
+      const t3 = interpret("3pm", t2.state);
+      expect(t3.result.type).toBe("FINAL");
+      if (t3.result.type === "FINAL") {
+        expect(t3.result.intent).toBe("CREATE_TASK");
+        expect(t3.result.payload.title).toBe("buy milk");
+        expect(t3.result.payload.date).toBe("tomorrow");
+        expect(t3.result.payload.time).toBe("3pm");
+      }
+    });
+
+    it("cancels slot-filling when user types 'cancel'", () => {
+      const t1 = interpret("add buy milk", initialState);
+      const t2 = interpret("cancel", t1.state);
+      expect(t2.result.type).toBe("INFO");
+      expect(t2.state.activeIntent).toBeUndefined();
+      expect(t2.state.awaitingSlot).toBeUndefined();
+    });
+  });
+
+  describe("DELETE_ALL_TASKS confirmation", () => {
+    it("executes DELETE_ALL when user confirms with 'yes'", () => {
+      const t1 = interpret("delete all tasks", initialState);
+      expect(t1.result.type).toBe("QUESTION");
+      expect(t1.state.awaitingDeleteAllConfirmation).toBe(true);
+
+      const t2 = interpret("yes", t1.state);
+      expect(t2.result.type).toBe("FINAL");
+      if (t2.result.type === "FINAL") {
+        expect(t2.result.intent).toBe("DELETE_ALL_TASKS");
+      }
+    });
+
+    it("cancels DELETE_ALL when user answers 'no'", () => {
+      const t1 = interpret("delete all tasks", initialState);
+      const t2 = interpret("no", t1.state);
+      expect(t2.result.type).toBe("INFO");
+      expect(t2.state.awaitingDeleteAllConfirmation).toBeUndefined();
+    });
+
+    it("re-asks when response is neither yes nor no", () => {
+      const t1 = interpret("delete all tasks", initialState);
+      const t2 = interpret("maybe", t1.state);
+      expect(t2.result.type).toBe("QUESTION");
+      expect(t2.state.awaitingDeleteAllConfirmation).toBe(true);
+    });
+  });
+
+  describe("EDIT_TASK — two-turn field flows", () => {
+    it("date field: edit → 'date' → provide date → FINAL EDIT_TASK", () => {
+      const t1 = interpret("edit #22", initialState);
+      expect(t1.result.type).toBe("QUESTION");
+      expect(t1.state.awaitingEditChanges?.taskId).toBe(22);
+
+      const t2 = interpret("date", t1.state);
+      expect(t2.result.type).toBe("QUESTION");
+      expect(t2.state.awaitingDate).toBe(true);
+
+      const t3 = interpret("tomorrow", t2.state);
+      expect(t3.result.type).toBe("FINAL");
+      if (t3.result.type === "FINAL") {
+        expect(t3.result.intent).toBe("EDIT_TASK");
+        expect(t3.result.payload.id).toBe(22);
+        expect(t3.result.payload.date).toBe("tomorrow");
+      }
+    });
+
+    it("time field: edit → 'time' → provide time → FINAL EDIT_TASK", () => {
+      const t1 = interpret("edit #22", initialState);
+      const t2 = interpret("time", t1.state);
+      expect(t2.result.type).toBe("QUESTION");
+      expect(t2.state.awaitingTime).toBe(true);
+
+      const t3 = interpret("5pm", t2.state);
+      expect(t3.result.type).toBe("FINAL");
+      if (t3.result.type === "FINAL") {
+        expect(t3.result.intent).toBe("EDIT_TASK");
+        expect(t3.result.payload.id).toBe(22);
+        expect(t3.result.payload.time).toBe("5pm");
+      }
+    });
+
+    it("title field: edit → 'title' → provide title → FINAL EDIT_TASK", () => {
+      const t1 = interpret("edit #22", initialState);
+      const t2 = interpret("title", t1.state);
+      expect(t2.result.type).toBe("QUESTION");
+      expect(t2.state.awaitingTitle).toBe(true);
+
+      const t3 = interpret("New Task Name", t2.state);
+      expect(t3.result.type).toBe("FINAL");
+      if (t3.result.type === "FINAL") {
+        expect(t3.result.intent).toBe("EDIT_TASK");
+        expect(t3.result.payload.id).toBe(22);
+        expect(t3.result.payload.title).toBe("New Task Name");
+      }
+    });
+
+    it("priority field: edit → 'priority' → provide priority → FINAL EDIT_TASK", () => {
+      const t1 = interpret("edit #22", initialState);
+      const t2 = interpret("priority", t1.state);
+      expect(t2.result.type).toBe("QUESTION");
+      expect(t2.state.awaitingPriority).toBe(true);
+
+      const t3 = interpret("high", t2.state);
+      expect(t3.result.type).toBe("FINAL");
+      if (t3.result.type === "FINAL") {
+        expect(t3.result.intent).toBe("EDIT_TASK");
+        expect(t3.result.payload.id).toBe(22);
+        expect(t3.result.payload.priority).toBeDefined();
+      }
+    });
+
+    it("cancels edit flow when user types 'cancel'", () => {
+      const t1 = interpret("edit #22", initialState);
+      const t2 = interpret("cancel", t1.state);
+      expect(t2.result.type).toBe("INFO");
+      expect(t2.state.awaitingEditChanges).toBeUndefined();
+    });
+  });
+
+  describe("DELETE_TASK — disambiguation", () => {
+    const pendingDeleteState: ConversationState = {
+      ...initialState,
+      pendingDelete: {
+        candidates: [
+          { id: 3, title: "Meeting", dueAt: "2025-01-15T10:00:00Z" },
+          { id: 7, title: "Meeting", dueAt: "2025-01-20T10:00:00Z" },
+        ],
+      },
+    };
+
+    it("resolves by id when user types the task id", () => {
+      const { result } = interpret("#3", pendingDeleteState);
+      expect(result.type).toBe("FINAL");
+      if (result.type === "FINAL") {
+        expect(result.intent).toBe("DELETE_TASK");
+        expect(result.payload.id).toBe(3);
+      }
+    });
+
+    it("resolves to earliest task when user types 'earliest'", () => {
+      const { result } = interpret("earliest", pendingDeleteState);
+      expect(result.type).toBe("FINAL");
+      if (result.type === "FINAL") {
+        expect(result.intent).toBe("DELETE_TASK");
+        expect(result.payload.id).toBe(3);
+      }
+    });
+
+    it("resolves to latest task when user types 'latest'", () => {
+      const { result } = interpret("latest", pendingDeleteState);
+      expect(result.type).toBe("FINAL");
+      if (result.type === "FINAL") {
+        expect(result.intent).toBe("DELETE_TASK");
+        expect(result.payload.id).toBe(7);
+      }
+    });
+
+    it("re-asks when response is not an id or earliest/latest", () => {
+      const { result, state } = interpret("dunno", pendingDeleteState);
+      expect(result.type).toBe("QUESTION");
+      expect(state.pendingDelete).toBeDefined();
+    });
+  });
+
+  describe("optional time slot", () => {
+    const awaitingTimeState: ConversationState = {
+      ...initialState,
+      awaitingOptionalSlot: "time",
+      pendingCommand: {
+        intent: "CREATE_TASK",
+        payload: { title: "buy milk", date: "tomorrow" },
+      },
+    };
+
+    it("skips time and returns FINAL on 'no'", () => {
+      const { result } = interpret("no", awaitingTimeState);
+      expect(result.type).toBe("FINAL");
+      if (result.type === "FINAL") {
+        expect(result.intent).toBe("CREATE_TASK");
+        expect(result.payload.title).toBe("buy milk");
+        expect(result.payload.date).toBe("tomorrow");
+        expect(result.payload.time).toBeUndefined();
+      }
+    });
+
+    it("skips time and returns FINAL on 'skip'", () => {
+      const { result } = interpret("skip", awaitingTimeState);
+      expect(result.type).toBe("FINAL");
+      if (result.type === "FINAL") {
+        expect(result.intent).toBe("CREATE_TASK");
+        expect(result.payload.time).toBeUndefined();
+      }
+    });
+
+    it("accepts a valid time and includes it in FINAL", () => {
+      const { result } = interpret("3pm", awaitingTimeState);
+      expect(result.type).toBe("FINAL");
+      if (result.type === "FINAL") {
+        expect(result.intent).toBe("CREATE_TASK");
+        expect(result.payload.time).toBe("3pm");
+      }
     });
   });
 });

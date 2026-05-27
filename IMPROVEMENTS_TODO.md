@@ -78,7 +78,7 @@
 - **Pronto quando:** ≥8 casos a passar, refletindo o comportamento atual.
 - **Validar:** `cd command-task-core && npm test`
 
-### [ ] Step 1.2 — Testes dos fluxos multi-turno (state machine)
+### [x] Step 1.2 — Testes dos fluxos multi-turno (state machine)
 - **Objetivo:** cobrir as continuações de conversa (a parte mais frágil).
 - **Ficheiros:** `command-task-core/src/core/index.spec.ts` (continuar). Ler os blocos de continuação em `index.ts` e `state/types.ts`.
 - **Fazer:** testar, encadeando o `state` devolvido: slot-filling de CREATE (title→date→time), fluxo de edição ("what to change?" → campo), disambiguação de delete, confirmação de delete-all, slot opcional de hora. Verificar transições de `state` e a resposta final.
