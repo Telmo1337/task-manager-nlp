@@ -36,7 +36,7 @@ describe("TaskService", () => {
         userId: mockUserId
       });
 
-      repository.findDueOnDate.mockResolvedValue([]);
+      repository.findDuplicate.mockResolvedValue(null);
 
       const result = await service.createTask({
         title: "study english",
@@ -51,7 +51,7 @@ describe("TaskService", () => {
     });
 
     it("detects duplicate task on same date", async () => {
-      repository.findDueOnDate.mockResolvedValue([
+      repository.findDuplicate.mockResolvedValue(
         {
           id: 1,
           title: "study english",
@@ -65,7 +65,7 @@ describe("TaskService", () => {
           updatedAt: new Date(),
           userId: mockUserId
         }
-      ]);
+      );
 
       const result = await service.createTask({
         title: "study english",

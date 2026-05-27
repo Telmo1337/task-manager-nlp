@@ -34,6 +34,16 @@
 - **Pronto quando:** sei exatamente o estado atual (verde ou que falha).
 - **Validar:** `npm run build` && `cd command-task-core && npm test` && `cd ../backend && npm test`
 
+### [x] Step 0.0.1 — Corrigir testes do backend (pré-requisito do 0.1)
+- **Objetivo:** fazer o `cd backend && npm test` ficar verde antes de criar o runner da raiz.
+- **Ficheiros:** `backend/jest.config.js`, `backend/src/repositories/__mocks__/task.repository.ts`, `backend/src/services/task.service.spec.ts`.
+- **Fazer:**
+  1. `jest.config.js`: substituir `testPathIgnorePatterns` por `roots: ["<rootDir>/src"]` para o jest-haste-map não ver `backend/dist/` (causava "duplicate manual mock").
+  2. Mock manual: adicionar `findDuplicate = jest.fn()` (e `findDueOnDate = jest.fn()`) em falta.
+  3. Spec: substituir `repository.findDueOnDate.mockResolvedValue(…)` por `repository.findDuplicate.mockResolvedValue(…)` nos dois testes (o serviço chama `findDuplicate`, não `findDueOnDate` — spec estava desatualizado).
+- **Pronto quando:** `cd backend && npm test` → 2/2 verdes.
+- **Validar:** `cd backend && npm test`
+
 ### [ ] Step 0.1 — Test runner na raiz
 - **Objetivo:** um único comando corre os testes de todos os pacotes.
 - **Ficheiros:** `package.json` (raiz).
