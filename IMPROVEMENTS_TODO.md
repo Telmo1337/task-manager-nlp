@@ -96,7 +96,7 @@
 
 ## Fase 2 — Refactor seguro do core (testes da Fase 1 têm de ficar verdes)
 
-### [ ] Step 2.1 — Extrair a camada de chit-chat
+### [x] Step 2.1 — Extrair a camada de chit-chat
 - **Objetivo:** tirar 172 linhas hardcoded de dentro de `index.ts`.
 - **Ficheiros:** novo `command-task-core/src/core/conversational/` (ex.: `patterns.ts` + `responses.ts` + `index.ts`); editar `index.ts` para delegar.
 - **Fazer:** mover `getConversationalResponse()` para o módulo, **separando padrões (regex) dos textos** (mapa `chave→texto`). Comportamento idêntico.
