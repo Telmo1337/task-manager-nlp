@@ -44,7 +44,7 @@
 - **Pronto quando:** `cd backend && npm test` → 2/2 verdes.
 - **Validar:** `cd backend && npm test`
 
-### [ ] Step 0.1 — Test runner na raiz
+### [x] Step 0.1 — Test runner na raiz
 - **Objetivo:** um único comando corre os testes de todos os pacotes.
 - **Ficheiros:** `package.json` (raiz).
 - **Fazer:** adicionar script `"test": "npm test --prefix command-task-core && npm test --prefix backend"` (incluir frontend só depois de ter testes — Step 5.4). Não alterar os testes em si.
