@@ -22,6 +22,8 @@ export type ConversationState =
   | { kind: "PENDING_DELETE"; candidates: TaskCandidate[]; slots: Slots }
   | { kind: "PENDING_COMMAND"; pendingCommand: PendingCommand; slots: Slots }
   | { kind: "PENDING_DELETE_ALL"; slots: Slots }
-  | { kind: "EDIT"; taskId: number; editSubState: EditSubState; slots: Slots };
+  | { kind: "EDIT"; taskId: number; editSubState: EditSubState; slots: Slots }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  | { kind: "AWAITING_DISAMBIGUATION"; activeIntent: Intent; ambiguousSlot: string; values: any[]; slots: Slots };
 
 export const initialState: ConversationState = { kind: "IDLE", slots: {} };

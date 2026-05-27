@@ -428,4 +428,94 @@ describe("interpret() — multi-turn / state machine", () => {
       }
     });
   });
+
+  describe("AMBIGUOUS_SLOT — fresh input triggers disambiguation", () => {
+    it("asks which time when two times are provided in one message", () => {
+      const { result, state } = interpret("add buy milk tomorrow at 3pm or 5pm", initialState);
+      expect(result.type).toBe("QUESTION");
+      if (result.type === "QUESTION") {
+        expect(result.message).toMatch(/3pm/);
+        expect(result.message).toMatch(/5pm/);
+      }
+      expect(state.kind).toBe("AWAITING_DISAMBIGUATION");
+      if (state.kind === "AWAITING_DISAMBIGUATION") {
+        expect(state.ambiguousSlot).toBe("time");
+        expect(state.values).toContain("3pm");
+        expect(state.values).toContain("5pm");
+        expect(state.activeIntent).toBe("CREATE_TASK");
+      }
+    });
+
+    it("end-to-end: fresh input → disambiguation → FINAL", () => {
+      const t1 = interpret("add buy milk tomorrow at 3pm or 5pm", initialState);
+      expect(t1.state.kind).toBe("AWAITING_DISAMBIGUATION");
+
+      const t2 = interpret("2", t1.state);
+      expect(t2.result.type).toBe("FINAL");
+      if (t2.result.type === "FINAL") {
+        expect(t2.result.intent).toBe("CREATE_TASK");
+        expect(t2.result.payload.time).toBe("5pm");
+        expect(t2.result.payload.date).toBe("tomorrow");
+      }
+    });
+  });
+
+  describe("AWAITING_DISAMBIGUATION — slot ambiguity flow", () => {
+    const disambState: ConversationState = {
+      kind: "AWAITING_DISAMBIGUATION",
+      activeIntent: "CREATE_TASK",
+      ambiguousSlot: "time",
+      values: ["3pm", "5pm"],
+      slots: { title: ["buy milk"], date: ["tomorrow"], time: ["3pm", "5pm"] },
+    };
+
+    it("resolves by 1-based index and returns FINAL", () => {
+      const { result, state } = interpret("1", disambState);
+      expect(result.type).toBe("FINAL");
+      if (result.type === "FINAL") {
+        expect(result.intent).toBe("CREATE_TASK");
+        expect(result.payload.time).toBe("3pm");
+        expect(result.payload.title).toBe("buy milk");
+        expect(result.payload.date).toBe("tomorrow");
+      }
+      expect(state.kind).toBe("IDLE");
+    });
+
+    it("resolves by value text and returns FINAL", () => {
+      const { result } = interpret("5pm", disambState);
+      expect(result.type).toBe("FINAL");
+      if (result.type === "FINAL") {
+        expect(result.payload.time).toBe("5pm");
+      }
+    });
+
+    it("re-asks when response does not match any value or index", () => {
+      const { result, state } = interpret("dunno", disambState);
+      expect(result.type).toBe("QUESTION");
+      if (result.type === "QUESTION") {
+        expect(result.message).toMatch(/3pm/);
+        expect(result.message).toMatch(/5pm/);
+      }
+      expect(state.kind).toBe("AWAITING_DISAMBIGUATION");
+    });
+
+    it("falls back to AWAITING_SLOT when resolving still leaves a missing required slot", () => {
+      const partialDisamb: ConversationState = {
+        kind: "AWAITING_DISAMBIGUATION",
+        activeIntent: "CREATE_TASK",
+        ambiguousSlot: "time",
+        values: ["3pm", "5pm"],
+        slots: { title: ["buy milk"], time: ["3pm", "5pm"] }, // date missing
+      };
+      const { result, state } = interpret("1", partialDisamb);
+      expect(result.type).toBe("QUESTION");
+      if (result.type === "QUESTION") {
+        expect(result.message).toMatch(/date/i);
+      }
+      expect(state.kind).toBe("AWAITING_SLOT");
+      if (state.kind === "AWAITING_SLOT") {
+        expect(state.awaitingSlot).toBe("date");
+      }
+    });
+  });
 });

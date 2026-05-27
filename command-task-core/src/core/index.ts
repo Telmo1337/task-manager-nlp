@@ -236,9 +236,51 @@ export function interpret(
   }
 
   /* =========================================
+     🔀 AMBIGUOUS SLOT — DISAMBIGUATION
+     ========================================= */
+  if (state.kind === "AWAITING_DISAMBIGUATION") {
+    const { values, ambiguousSlot, activeIntent, slots: disambSlots } = state;
+
+    const chosenByIndex = parseInt(normalized, 10);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let chosenValue: any;
+    if (!Number.isNaN(chosenByIndex) && chosenByIndex >= 1 && chosenByIndex <= values.length) {
+      chosenValue = values[chosenByIndex - 1];
+    } else {
+      chosenValue = values.find((v) => String(v).toLowerCase() === normalized);
+    }
+
+    if (chosenValue === undefined) {
+      const opts = values.map((v, i) => `${i + 1}. ${v}`).join(", ");
+      return {
+        result: { type: "QUESTION", message: `I didn't understand. Please choose: ${opts}` },
+        state,
+      };
+    }
+
+    const resolvedSlots = { ...disambSlots, [ambiguousSlot]: [chosenValue] };
+    const required = REQUIRED_SLOTS[activeIntent];
+    const missing = required.find(
+      (slot) => !resolvedSlots[slot] || resolvedSlots[slot].length === 0
+    );
+
+    if (missing) {
+      return {
+        result: { type: "QUESTION", message: `Please provide ${missing}.` },
+        state: awaitSlot(activeIntent, resolvedSlots, missing),
+      };
+    }
+
+    return {
+      result: finalResult(activeIntent, normalizePayload(resolvedSlots)),
+      state: resetState(),
+    };
+  }
+
+  /* =========================================
      🆕 NOVO INPUT
      ========================================= */
-  const { ctx } = runPipeline(input);
+  const { ctx, ambiguity } = runPipeline(input);
   const detected = detectIntent(input);
 
   // Check for conversational questions first
@@ -284,6 +326,26 @@ export function interpret(
         message: `Please provide ${missing}.`,
       },
       state: awaitSlot(intent, slots, missing),
+    };
+  }
+
+  if (ambiguity?.type === "AMBIGUOUS_SLOT") {
+    const opts = ambiguity.values.map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (v: any, i: number) => `${i + 1}. ${v}`
+    ).join(", ");
+    return {
+      result: {
+        type: "QUESTION",
+        message: `Which ${ambiguity.slot} did you mean? ${opts}`,
+      },
+      state: {
+        kind: "AWAITING_DISAMBIGUATION",
+        activeIntent: intent,
+        ambiguousSlot: ambiguity.slot,
+        values: ambiguity.values,
+        slots,
+      },
     };
   }
 

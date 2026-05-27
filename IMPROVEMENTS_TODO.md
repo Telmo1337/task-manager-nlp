@@ -117,7 +117,7 @@
 - **Pronto quando:** sem flags booleanas paralelas; `tsc` e testes verdes.
 - **Validar:** `cd command-task-core && npx tsc --noEmit && npm test`
 
-### [ ] Step 2.4 — Ligar a disambiguação de slot (`AMBIGUOUS_SLOT`)
+### [x] Step 2.4 — Ligar a disambiguação de slot (`AMBIGUOUS_SLOT`)
 - **Objetivo:** usar a deteção de ambiguidade que já existe mas é ignorada.
 - **Ficheiros:** `command-task-core/src/core/ambiguity/checker.ts`, `pipeline/runPipeline.ts`, `index.ts`; novos testes.
 - **Fazer:** quando um slot tem múltiplos valores, devolver QUESTION ("qual: 3pm ou 15h?") e tratar a resposta no turno seguinte. Adicionar testes do fluxo.
