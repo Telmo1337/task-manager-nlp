@@ -8,10 +8,12 @@ export interface ConversationState {
   // 🆕 slot opcional (ex: time)
   awaitingOptionalSlot?: "time";
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   slots: Record<string, any[]>;
 
   pendingCommand?: {
     intent: Intent;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: Record<string, any>;
   };
 

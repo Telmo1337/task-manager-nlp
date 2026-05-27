@@ -51,7 +51,7 @@
 - **Pronto quando:** `npm test` na raiz corre core + backend.
 - **Validar:** `npm test`
 
-### [ ] Step 0.2 — ESLint no backend e no core
+### [x] Step 0.2 — ESLint no backend e no core
 - **Objetivo:** lint nos 3 pacotes (o frontend já tem).
 - **Ficheiros:** `backend/` e `command-task-core/` (novo `eslint.config.js` em cada); `package.json` (raiz, script `lint`).
 - **Fazer:** configurar ESLint + `@typescript-eslint` em backend e core, alinhado com o do frontend. Corrigir/triar erros óbvios (não fazer refactors grandes — se um erro exigir mudança de lógica, suprimir com comentário e anotar como item novo). Adicionar `"lint"` na raiz a correr os 3.
@@ -302,6 +302,10 @@
     - O mock manual `src/repositories/__mocks__/task.repository.ts` está dessincronizado com o serviço: falta `findDueOnDate`, que o `task.service.spec.ts` chama (`repository.findDueOnDate.mockResolvedValue` → `undefined`).
   - **Frontend**: fora do *Validar* do Step 0.0; não corrido.
   - **Resumo**: core verde; build + testes do backend vermelhos. A cadeia *Validar* (`npm run build && core test && backend test`) está VERMELHA no global (pára no build).
+- **Step 0.2 — ESLint** (2026-05-27): `eslint.config.mjs` criado em `backend/` e `command-task-core/` (flat config, `@typescript-eslint/recommended`, `globals.node`). Script `"lint"` adicionado nos 3 `package.json`. `npm run lint` na raiz passa a 0 erros / 1 warning (pre-existing `react-hooks/exhaustive-deps` em `useChat.ts`). Erros corrigidos/suprimidos:
+  - Triviais (renomeados): catch vars `error→_error`, params `sessionId→_sessionId`, `no-case-declarations` wrapped com `{}`, `no-useless-escape` em `title.ts` corrigido, `startIntent` importação não usada removida.
+  - Suprimidos com `eslint-disable-next-line` (Step 4.3 trata-os): todos os `no-explicit-any` em backend e core.
+  - Frontend (pre-existente): `react-refresh/only-export-components` em `button.tsx`, `theme.tsx`, `main.tsx` — suprimidos com comentários (arquitetura a tratar noutra altura).
 - Itens novos descobertos (não alargar âmbito — anotar aqui):
   - **`command-task-core/node_modules/` está commitado no git** (com shims `.cmd`/`.ps1` de Windows + CRLF) — é a causa real dos bins sem bit de execução no Linux (`jest: Permission denied`). Correr `npm ci` no core regenerou ~170 ficheiros tracked (typechange/exec-bit); **não** foram commitados nesta sessão (só o `IMPROVEMENTS_TODO.md`). Além disso o `install:all` omite `command-task-core` e `shared`. Fix próprio: tirar `node_modules` do VCS + `.gitignore` (alargar o Step 6.1) e incluir o core no `install:all` (Step 0.1).
   - `command-task-core` não tem script `build` e o `npm run build` nunca gera o seu `dist`, mas o backend referencia-o como `composite` → o build parte logo a vermelho. (Relacionado com Step 6.1/6.2.)

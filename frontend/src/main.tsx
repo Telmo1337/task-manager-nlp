@@ -18,6 +18,7 @@ const RegisterPage = lazy(() => import('./components/auth/RegisterPage.tsx'))
 const ProtectedRoute = lazy(() => import('./components/auth/ProtectedRoute.tsx'))
 
 // Loading fallback component
+// eslint-disable-next-line react-refresh/only-export-components
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-neutral-50 dark:bg-neutral-950">
@@ -26,6 +27,7 @@ function PageLoader() {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function AnimatedRoutes() {
   const location = useLocation();
   

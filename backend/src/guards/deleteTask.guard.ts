@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isDeleteTaskPayload(payload: any): payload is {
   id?: number;
   title?: string;

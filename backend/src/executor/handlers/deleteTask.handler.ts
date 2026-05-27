@@ -72,6 +72,7 @@ export async function deleteTaskHandler(
         deleted: true
       }
     };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     return {
       status: "ERROR",

@@ -169,6 +169,7 @@ export class TaskRepository {
 
   // Update task status
   async updateStatus(userId: number, id: number, status: TaskStatus) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any = { status };
     if (status === "completed") {
       data.completedAt = new Date();

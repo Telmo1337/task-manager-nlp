@@ -73,7 +73,7 @@ export async function createTaskHandler(
         createdAt: task.createdAt.toISOString()
       }
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       status: "ERROR",
       intent: "CREATE_TASK",

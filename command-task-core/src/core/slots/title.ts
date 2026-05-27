@@ -48,7 +48,7 @@ export function extractTitle(
     .replace(/\b\d{2}-\d{2}-\d{4}\b/g, "")
     .replace(/\b(at|in)\b/g, "")
     // Remove lone symbols and punctuation
-    .replace(/[#@$%^&*()+=\[\]{}|\\;:'"<>?,./]+/g, " ")
+    .replace(/[#@$%^&*()+=[\]{}|\\;:'"<>?,./]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 

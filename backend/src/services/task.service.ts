@@ -141,10 +141,11 @@ export class TaskService {
         tasks = await this.repository.findCompleted(userId);
         break;
 
-      case "COMPLETED_ON_DATE":
+      case "COMPLETED_ON_DATE": {
         const date = new Date(filter.value);
         tasks = await this.repository.findCompletedOnDate(userId, date);
         break;
+      }
 
       case "PENDING":
         tasks = await this.repository.findByStatus(userId, "pending");

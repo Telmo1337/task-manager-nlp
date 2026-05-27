@@ -97,7 +97,7 @@ export function createApp() {
       const month = parseInt(req.params.month as string);
       const tasks = await taskService.getTasksForCalendar(userId, year, month);
       res.json({ status: "ok", tasks });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ status: "error", message: "Failed to get calendar data" });
     }
   });
@@ -113,7 +113,7 @@ export function createApp() {
         return res.status(404).json({ status: "error", message: "Task not found" });
       }
       res.json({ status: "ok", task });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ status: "error", message: "Failed to get task" });
     }
   });
@@ -132,6 +132,7 @@ export function createApp() {
       
       const task = await taskService.updateTaskStatus(userId, id, status);
       res.json({ status: "ok", task });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       res.status(500).json({ status: "error", message: error.message || "Failed to update status" });
     }
@@ -145,7 +146,7 @@ export function createApp() {
       const taskId = req.query.taskId ? parseInt(req.query.taskId as string) : undefined;
       const history = await taskService.getTaskHistory(userId, taskId);
       res.json({ status: "ok", history });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ status: "error", message: "Failed to get history" });
     }
   });

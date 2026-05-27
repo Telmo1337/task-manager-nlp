@@ -4,10 +4,12 @@ import { REQUIRED_SLOTS } from "./requirements";
 export type AmbiguityResult =
   | { type: "OK" }
   | { type: "MISSING_SLOT"; slot: string }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | { type: "AMBIGUOUS_SLOT"; slot: string; values: any[] };
 
 export function checkAmbiguity(
   intent: Intent,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   slots: Record<string, any[]>
 ): AmbiguityResult {
 

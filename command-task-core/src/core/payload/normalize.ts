@@ -12,8 +12,11 @@
  */
 
 export function normalizePayload(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   slots: Record<string, any[]>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const payload: Record<string, any> = {};
 
   // title

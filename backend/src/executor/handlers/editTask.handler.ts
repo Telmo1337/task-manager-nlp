@@ -54,6 +54,7 @@ export async function editTaskHandler(
       intent: "EDIT_TASK",
       data: result
     };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     return {
       status: "ERROR",

@@ -40,6 +40,7 @@ export function awaitSlot(
 export function fillSlot(
   state: ConversationState,
   slot: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any
 ): ConversationState {
   return {

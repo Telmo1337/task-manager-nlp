@@ -26,7 +26,7 @@ type ListTasksFilter =
 
 export async function listTasksHandler(
   payload: unknown,
-  sessionId: string = "default",
+  _sessionId: string = "default",
   userId: number
 ): Promise<CommandResult> {
   // 1️⃣ valida runtime + TS

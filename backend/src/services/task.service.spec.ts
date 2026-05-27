@@ -14,9 +14,12 @@ describe("TaskService", () => {
 
   beforeEach(() => {
     service = new TaskService();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     repository = (service as any).repository;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     historyRepository = (service as any).historyRepository;
     // Mock history create to avoid errors
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     historyRepository.create.mockResolvedValue({} as any);
   });
 

@@ -18,5 +18,6 @@ export type CoreResult =
   | {
       type: "FINAL";
       intent: Intent;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       payload: Record<string, any>;
     };

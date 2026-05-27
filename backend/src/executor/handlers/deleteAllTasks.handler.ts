@@ -5,7 +5,7 @@ const taskService = new TaskService();
 
 export async function deleteAllTasksHandler(
   payload: unknown,
-  sessionId: string = "default",
+  _sessionId: string = "default",
   userId: number
 ): Promise<CommandResult> {
   try {
@@ -20,7 +20,7 @@ export async function deleteAllTasksHandler(
         message: `Deleted ${count} task(s).`
       }
     };
-  } catch (error: any) {
+  } catch (_error) {
     return {
       status: "ERROR",
       intent: "DELETE_ALL_TASKS",

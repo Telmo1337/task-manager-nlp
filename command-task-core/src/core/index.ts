@@ -4,7 +4,6 @@ import { normalizePayload } from "./payload/normalize";
 import { isDescriptionKeywordOnly } from "./slots/description";
 
 import {
-  startIntent,
   awaitSlot,
   resetState,
 } from "./state/stateManager";
@@ -230,6 +229,7 @@ function getConversationalResponse(text: string): string | null {
    ========================================= */
 function finalResult(
   intent: Intent,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: Record<string, any>
 ): CoreResult {
   return {
@@ -487,6 +487,7 @@ export function interpret(
     // Parse what the user wants to change
     const { ctx } = runPipeline(input);
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payload: Record<string, any> = {
       id: state.awaitingEditChanges.taskId,
     };
@@ -636,6 +637,7 @@ export function interpret(
       },
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mergedSlots: Record<string, any[]> = {
       ...updatedState.slots,
       ...ctx.slots,

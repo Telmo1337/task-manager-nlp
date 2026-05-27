@@ -11,6 +11,7 @@ export function extractSlots(
   text: string,
   intent: Intent | null
 ): ExtractedSlots {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const slots: Record<string, any[]> = {};
   const lower = text.toLowerCase();
 
