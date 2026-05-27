@@ -103,7 +103,7 @@
 - **Pronto quando:** `index.ts` deixa de conter os textos; testes da Fase 1 verdes.
 - **Validar:** `cd command-task-core && npm test`
 
-### [ ] Step 2.2 — Extrair o fluxo de edição
+### [x] Step 2.2 — Extrair o fluxo de edição
 - **Objetivo:** isolar o maior sub-fluxo (~225 linhas) de `interpret()`.
 - **Ficheiros:** novo `command-task-core/src/core/flows/editFlow.ts`; editar `index.ts`.
 - **Fazer:** mover a lógica do fluxo de edição para `handleEditFlow(input, state)` que devolve `{ result, state }`. `interpret()` passa a delegar quando está nesse estado. Sem mudança de comportamento.
