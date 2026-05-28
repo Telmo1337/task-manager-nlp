@@ -19,6 +19,11 @@ const taskService = new TaskService();
 export function createApp() {
   const app = express();
 
+  // Trust one proxy hop (nginx / load balancer in Docker/production).
+  // Without this, express-rate-limit and req.ip see the proxy IP instead of the
+  // real client IP, collapsing all clients into a single rate-limit bucket.
+  app.set("trust proxy", 1);
+
   // Security: HTTPS redirect in production
   app.use(httpsRedirect);
 

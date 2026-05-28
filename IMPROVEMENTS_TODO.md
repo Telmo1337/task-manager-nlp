@@ -173,7 +173,7 @@
 - **Pronto quando:** decisão aplicada; auth continua a funcionar; se MANTER, #4 e #5 corrigidos (com teste).
 - **Validar:** `cd backend && npm test` e smoke de login (sucesso + falha + email inexistente).
 
-### [ ] Step 3.4 — `trust proxy` + IP fiável (#3) — FAZER SEMPRE
+### [x] Step 3.4 — `trust proxy` + IP fiável (#3) — FAZER SEMPRE
 - **Objetivo:** o IP usado em rate limiter / lockout / audit deixar de ser spoofável via header.
 - **Ficheiros:** `backend/src/app.ts` (config Express), `backend/src/controllers/auth.controller.ts:21` (`getClientInfo`).
 - **Fazer:** `app.set('trust proxy', <n.º de proxies à frente>)` adequado ao deploy, e derivar o IP de `req.ip` (que passa a respeitar o trust proxy) em vez de ler `x-forwarded-for` à mão. Corrige também o `express-rate-limit`, que sem isto partilha um único balde entre todos atrás do proxy.
