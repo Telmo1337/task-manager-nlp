@@ -157,7 +157,7 @@
 - **Pronto quando:** os tokens vivem **apenas** no sítio do modelo escolhido (verificar no DevTools → Application); login/refresh/logout funcionam; não há tokens duplicados em body+cookie.
 - **Validar:** `npm run dev`, fazer login, inspecionar storage/cookies, forçar expiração do access e confirmar o refresh.
 
-### [ ] Step 3.2 — Fallback de secrets em dev
+### [x] Step 3.2 — Fallback de secrets em dev
 - **Objetivo:** a app não deve arrancar "a fingir" com secret falso fixo.
 - **Ficheiros:** `backend/src/config/auth.config.ts`.
 - **Fazer:** se faltar `JWT_SECRET`/`JWT_REFRESH_SECRET`, gerar random forte por arranque **ou** falhar com mensagem clara (em vez do `dev-…-not-for-production` fixo). Atualizar `.env.example` se preciso.

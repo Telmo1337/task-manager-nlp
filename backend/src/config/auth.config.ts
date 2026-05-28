@@ -1,16 +1,20 @@
+import { randomBytes } from "crypto";
 import { StringValue } from "ms";
 
-// Enforce required environment variables in production
 const isProduction = process.env.NODE_ENV === "production";
 
-function getRequiredEnv(key: string, defaultValue?: string): string {
-  const value = process.env[key] || defaultValue;
+function getRequiredEnv(key: string): string {
+  const value = process.env[key];
   if (!value && isProduction) {
     throw new Error(`Missing required environment variable: ${key}`);
   }
   if (!value) {
-    console.warn(`⚠️  Warning: Using default ${key} - DO NOT use in production!`);
-    return `dev-${key.toLowerCase()}-not-for-production`;
+    // Random per-startup secret: tokens are invalidated on each restart (fine for dev).
+    const generated = randomBytes(32).toString("hex");
+    console.warn(
+      `⚠️  ${key} not set — generated a random secret for this run. Tokens will be invalidated on restart. Set ${key} in .env to avoid this.`
+    );
+    return generated;
   }
   return value;
 }
