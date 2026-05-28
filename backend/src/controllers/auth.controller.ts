@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
-import { accountLockoutService } from "../services/account-lockout.service";
-import { securityLogService } from "../services/security-log.service";
 
 const authService = new AuthService();
 
@@ -16,14 +14,6 @@ const REFRESH_COOKIE_OPTIONS = {
 
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-function getClientInfo(req: Request): { ip: string; userAgent: string } {
-  const ip = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() 
-    || req.socket.remoteAddress 
-    || "unknown";
-  const userAgent = req.headers["user-agent"] || "unknown";
-  return { ip, userAgent };
-}
-
 const ERROR_MESSAGES: Record<string, { status: number; message: string }> = {
   EMAIL_ALREADY_EXISTS: { status: 409, message: "Email already registered" },
   INVALID_CREDENTIALS: { status: 401, message: "Invalid email or password" },
@@ -35,8 +25,6 @@ const ERROR_MESSAGES: Record<string, { status: number; message: string }> = {
   INVALID_EMAIL_FORMAT: { status: 400, message: "Invalid email format" },
   PASSWORD_TOO_SHORT: { status: 400, message: "Password must be at least 8 characters" },
   NAME_TOO_SHORT: { status: 400, message: "Name must be at least 2 characters" },
-  ACCOUNT_LOCKED: { status: 423, message: "Account temporarily locked due to too many failed attempts" },
-  SUSPICIOUS_ACTIVITY: { status: 429, message: "Suspicious activity detected. Please try again later" },
 };
 
 function handleError(res: Response, error: unknown): void {
@@ -65,29 +53,7 @@ function clearRefreshTokenCookie(res: Response): void {
 export async function registerController(req: Request, res: Response): Promise<void> {
   try {
     const { email, password, name } = req.body;
-    const { ip, userAgent } = getClientInfo(req);
-
-    // Check for suspicious activity from this IP
-    const suspicious = await accountLockoutService.checkSuspiciousActivity(ip);
-    if (suspicious) {
-      await securityLogService.log({
-        action: "suspicious_registration_attempt",
-        ip,
-        userAgent,
-        details: { email },
-      });
-      throw new Error("SUSPICIOUS_ACTIVITY");
-    }
-
     const result = await authService.register({ email, password, name });
-
-    // Log successful registration
-    await securityLogService.log({
-      userId: result.user.id,
-      action: "register",
-      ip,
-      userAgent,
-    });
 
     // Refresh token in httpOnly cookie; access token returned in body for in-memory storage
     setRefreshTokenCookie(res, result.tokens.refreshToken);
@@ -105,83 +71,16 @@ export async function registerController(req: Request, res: Response): Promise<v
 export async function loginController(req: Request, res: Response): Promise<void> {
   try {
     const { email, password } = req.body;
-    const { ip, userAgent } = getClientInfo(req);
+    const result = await authService.login({ email, password });
 
-    // Check for suspicious activity
-    const suspicious = await accountLockoutService.checkSuspiciousActivity(ip);
-    if (suspicious) {
-      await securityLogService.log({
-        action: "suspicious_login_attempt",
-        ip,
-        userAgent,
-        details: { email },
-      });
-      throw new Error("SUSPICIOUS_ACTIVITY");
-    }
+    // Refresh token in httpOnly cookie; access token returned in body for in-memory storage
+    setRefreshTokenCookie(res, result.tokens.refreshToken);
 
-    // Try to find user first to check lockout
-    const userForLockout = await authService.findUserByEmail(email);
-    if (userForLockout) {
-      const lockStatus = await accountLockoutService.isAccountLocked(userForLockout.id);
-      if (lockStatus.locked) {
-        await securityLogService.log({
-          userId: userForLockout.id,
-          action: "login_attempt_while_locked",
-          ip,
-          userAgent,
-        });
-        throw new Error("ACCOUNT_LOCKED");
-      }
-    }
-
-    try {
-      const result = await authService.login({ email, password });
-
-      // Record successful login attempt
-      await accountLockoutService.recordAttempt({
-        email,
-        userId: result.user.id,
-        ip,
-        userAgent,
-        success: true,
-      });
-
-      // Log successful login
-      await securityLogService.log({
-        userId: result.user.id,
-        action: "login",
-        ip,
-        userAgent,
-      });
-
-      // Refresh token in httpOnly cookie; access token returned in body for in-memory storage
-      setRefreshTokenCookie(res, result.tokens.refreshToken);
-
-      res.json({
-        status: "ok",
-        user: result.user,
-        accessToken: result.tokens.accessToken,
-      });
-    } catch (loginError) {
-      // Record failed login attempt
-      if (userForLockout) {
-        await accountLockoutService.recordAttempt({
-          email,
-          userId: userForLockout.id,
-          ip,
-          userAgent,
-          success: false,
-        });
-
-        await securityLogService.log({
-          userId: userForLockout.id,
-          action: "failed_login",
-          ip,
-          userAgent,
-        });
-      }
-      throw loginError;
-    }
+    res.json({
+      status: "ok",
+      user: result.user,
+      accessToken: result.tokens.accessToken,
+    });
   } catch (error) {
     handleError(res, error);
   }
@@ -194,19 +93,7 @@ export async function logoutController(req: AuthenticatedRequest, res: Response)
       return;
     }
 
-    const { ip, userAgent } = getClientInfo(req);
-
     await authService.logout(req.user.userId);
-
-    // Log logout
-    await securityLogService.log({
-      userId: req.user.userId,
-      action: "logout",
-      ip,
-      userAgent,
-    });
-
-    // Clear refresh token cookie
     clearRefreshTokenCookie(res);
 
     res.json({ status: "ok", message: "Logged out successfully" });

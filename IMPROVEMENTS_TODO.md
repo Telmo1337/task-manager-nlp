@@ -164,7 +164,7 @@
 - **Pronto quando:** arrancar sem env de secret não produz um secret partilhado previsível.
 - **Validar:** `cd backend && npm run dev` sem a env e observar o comportamento novo.
 
-### [ ] Step 3.3 — Manter-e-endurecer OU remover o aparato de lockout/audit (DECISÃO) — resolve #4 e #5
+### [x] Step 3.3 — Manter-e-endurecer OU remover o aparato de lockout/audit (DECISÃO) — resolve #4 e #5
 - **Objetivo:** decidir conscientemente o destino do lockout + audit logs + deteção de atividade suspeita (hoje contornáveis).
 - **Decisão:**
   - **(MANTER)** Endurecer: também corrigir **#4** (registar tentativas falhadas mesmo com email desconhecido — tirar o guard `if (userForLockout)` em `auth.controller.ts:174`, registando por email/IP) **e #5** (envolver o incremento + lock num `prisma.$transaction` em `account-lockout.service.ts:41`). Documentar como exercício deliberado.

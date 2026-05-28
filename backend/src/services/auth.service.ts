@@ -62,12 +62,6 @@ export class AuthService {
     };
   }
 
-  async findUserByEmail(email: string): Promise<{ id: number; email: string } | null> {
-    const user = await this.userRepository.findByEmail(email);
-    if (!user) return null;
-    return { id: user.id, email: user.email };
-  }
-
   async logout(userId: number): Promise<void> {
     await this.userRepository.updateRefreshToken(userId, null);
   }
